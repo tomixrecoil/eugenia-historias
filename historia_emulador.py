@@ -153,11 +153,16 @@ def cerrar_carteles(ns=None):
 def _lista_cuentas():
     """Abre la lista de cuentas (mantener apretado el ícono del perfil) y la devuelve:
     el primer usuario es la cuenta activa."""
-    for _ in range(25):
+    for i in range(25):
         ns = nodos()
         if cerrar_carteles(ns):
             continue
         tab = next((n for n in ns if n["desc"] in ("Profile", "Perfil")), None)
+        if not tab and i % 2 == 1:
+            # A veces abre directo un reel a pantalla completa (sin la barra de abajo):
+            # "atrás" hasta que aparezca la barra (19/11, en GitHub).
+            adb("shell", "input", "keyevent", "4"); time.sleep(1.5)
+            continue
         if tab:
             a, b, c, d = tab["b"]
             x, y = (a + c) // 2, (b + d) // 2
