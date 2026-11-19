@@ -115,9 +115,13 @@ jobs:
           sleep 20
           adb shell input keyevent 82
           # Teclado ADB (github.com/senzhk/ADBKeyBoard, 18/11): emojis y tildes en el sticker
-          adb install -r apk/adbkeyboard.apk
-          adb shell ime enable com.android.adbkeyboard/.AdbIME
-          adb shell ime set com.android.adbkeyboard/.AdbIME
+          adb install -r apk/adbkeyboard.apk || true
+          # Recién instalado tarda unos segundos en registrarse como teclado
+          for i in $(seq 1 12); do
+            adb shell ime enable com.android.adbkeyboard/.AdbIME 2>/dev/null | grep -q "now enabled\|already enabled" && break
+            sleep 5
+          done
+          adb shell ime set com.android.adbkeyboard/.AdbIME || echo "aviso: sin teclado ADB, el botón sale sin emoji"
 
       - name: Historias
         if: steps.pend.outputs.n != '0'
