@@ -1,114 +1,123 @@
-"""El texto del sticker de enlace de cada historia (18/11/2026, pedido de Tomix: "que los
-nombres de los links no sean siempre 'ver curso'; que invente títulos teniendo en cuenta mis
-títulos ganadores de los ads, que inciten al click, y que sepa cuántos caracteres entran
-antes de que se vea '...'").
+"""El texto del sticker de enlace de cada historia (18/11/2026, pedidos de Tomix: "que los
+nombres de los links no sean siempre 'ver curso'"; "que invente títulos teniendo en cuenta
+mis títulos ganadores de los ads"; "que empiecen o terminen con algún emoji llamativo").
 
 Medido en el emulador el 18/11:
 - Instagram pasa el texto del sticker a MAYÚSCULAS.
-- Entran ~37 caracteres (con letras anchas tipo W/M) antes del "...". Tope: MAX = 32.
-- El emulador escribe como un teclado básico: sin tildes, sin ñ y sin emojis.
+- Entran ~37 caracteres (con letras anchas tipo W/M) antes del "...". Tope: MAX = 32
+  (un emoji ocupa como 2 letras, se cuenta doble).
 
-Cómo elige: Gemini inventa uno nuevo para cada historia, con los títulos que más clics
-sacaron en los ads como ejemplo (GANADORES). Se valida (largo, solo letras sin tilde,
-números y % + - |) y no puede prometer lo que la página no dice (la página muestra 60% OFF
-y bonos). Si Gemini no está o falla, sale uno del BANCO del nicho, sin repetir los últimos.
+Cómo elige: el MISMO formato de los títulos de los ads que más clics sacaron
+(gancho | llamado: HAZ CLICK, ENTRA YA, ENTRA AHORA...), con el descuento que muestra la
+página de ESE curso (bonsái 80%, los demás 60%). Gemini hace variantes en ese formato; si no
+está o falla, sale uno de PLANTILLAS. Siempre con un emoji de los que usan los ads ganadores
+al principio o al final. Sin tildes ni ñ si el emulador no tiene el teclado ADB (EMOJIS=False).
 """
 import json, os, re, urllib.request
 
 MAX = 32
-PERMITIDO = re.compile(r"^[A-Z0-9 %+\-|!?.,:/]+$")
 
-# Los que más clics por vista sacaron en los ads (CTR, Meta Ads, 18/11).
+# Títulos de los ads con más clics por vista (Meta Ads, 18/11; CTR entre paréntesis).
 GANADORES = [
-    "80% OFF HOY | +2640 estudiantes ya inscritos (3,7%)",
-    "80% de Descuento | ENTRA AHORA (3,6%)",
-    "Obten 3 Bonos GRATIS (3,3%)",
-    "Oferta Exclusiva HOY | ENTRA YA (2,9%)",
-    "Curso 100% Online | HAZ CLICK (2,4%)",
-    "Ultimo Dia | HAZ CLICK (2,4%)",
-    "Toca Mas Informacion (2,2%)",
-    "informacion del curso (2,2%)",
+    "🎁80% OFF HOY 👉 (3,7%)",
+    "💥80% de Descuento | ENTRA AHORA 👉 (3,6%)",
+    "🎁 Obtén Bonos 👉 (3,3%)",
+    "⏳ Oferta Exclusiva HOY | ENTRA YA 👉 (2,9%)",
+    "🎓 Curso 100% Online | HAZ CLICK 👉 (2,4%)",
+    "🔥Último Día | HAZ CLICK 👉 (2,4%)",
+    "🔗Toca \"Más Información\" 👉 (2,2%)",
+    "🌐informacion del curso (2,2%)",
+]
+# Los emojis de esos títulos (los que traccionan).
+EMOJIS_GANADORES = ["🎁", "💥", "⏳", "🎓", "🔥", "🔗", "👉", "🌐"]
+
+# Lo que muestra la página de cada curso (revisado en la página en vivo, 18/11).
+DESCUENTO = {"hidroponia": "60%", "bonsai": "80%", "terrarios": "60%", "herbologia": "60%"}
+
+# Las mismas estructuras de los ganadores, con el descuento de cada curso.
+PLANTILLAS = [
+    "{d} OFF HOY | HAZ CLICK",
+    "{d} DE DESCUENTO | ENTRA YA",
+    "OFERTA EXCLUSIVA | ENTRA YA",
+    "CURSO 100% ONLINE | HAZ CLICK",
+    "{d} OFF + BONOS | ENTRA YA",
+    "TOCA MAS INFORMACION",
+    "INFORMACION DEL CURSO",
+    "{d} OFF ESTA SEMANA | ENTRA",
+    "CURSO ONLINE {d} OFF | ENTRA",
+    "OBTEN TUS BONOS | HAZ CLICK",
 ]
 
-TEMA = {"hidroponia": "hidroponia (cultivar sin tierra)", "bonsai": "bonsai",
-        "terrarios": "terrarios", "herbologia": "plantas medicinales"}
-
-# Lo único que se puede prometer (lo que dicen las páginas): 60% OFF, bonos, online,
-# clases en video + PDF, acceso inmediato, pago único, garantía de 7 días, certificado.
-BANCO = {
-    "hidroponia": ["60% OFF HOY | ENTRA YA", "QUIERO MI HUERTO", "CULTIVA SIN TIERRA", "VER PRECIO EN TU MONEDA",
-                   "CURSO ONLINE | HAZ CLICK", "EMPIEZA HOY | 60% OFF", "QUIERO APRENDER", "CLASES + PDF | ENTRA",
-                   "ACCESO INMEDIATO", "MIRA EL CURSO", "60% OFF + BONOS", "QUIERO MI SISTEMA NFT",
-                   "HUERTO EN CASA | ENTRA", "GARANTIA 7 DIAS | ENTRA", "OFERTA DE HOY", "INFO DEL CURSO"],
-    "bonsai": ["60% OFF HOY | ENTRA YA", "QUIERO MI BONSAI", "APRENDE BONSAI DESDE CERO", "VER PRECIO EN TU MONEDA",
-               "CURSO ONLINE | HAZ CLICK", "EMPIEZA HOY | 60% OFF", "QUIERO APRENDER", "60% OFF + BONOS",
-               "ACCESO INMEDIATO", "MIRA EL CURSO", "MI PRIMER BONSAI", "OFERTA DE HOY",
-               "GARANTIA 7 DIAS | ENTRA", "INFO DEL CURSO", "CLASES + PDF | ENTRA", "QUIERO EL CURSO"],
-    "terrarios": ["60% OFF HOY | ENTRA YA", "QUIERO MI TERRARIO", "ARMA TU TERRARIO", "VER PRECIO EN TU MONEDA",
-                  "CURSO ONLINE | HAZ CLICK", "EMPIEZA HOY | 60% OFF", "QUIERO APRENDER", "60% OFF + BONOS",
-                  "ACCESO INMEDIATO", "MIRA EL CURSO", "MINI JARDIN EN UN FRASCO", "OFERTA DE HOY",
-                  "GARANTIA 7 DIAS | ENTRA", "INFO DEL CURSO", "CLASES + PDF | ENTRA", "QUIERO EL CURSO"],
-    "herbologia": ["60% OFF HOY | ENTRA YA", "QUIERO APRENDER", "BIENESTAR NATURAL EN CASA", "VER PRECIO EN TU MONEDA",
-                   "CURSO ONLINE | HAZ CLICK", "EMPIEZA HOY | 60% OFF", "REMEDIOS NATURALES", "60% OFF + BONOS",
-                   "ACCESO INMEDIATO", "MIRA EL CURSO", "MI BOTIQUIN NATURAL", "OFERTA DE HOY",
-                   "GARANTIA 7 DIAS | ENTRA", "INFO DEL CURSO", "CLASES + PDF | ENTRA", "QUIERO EL CURSO"],
-}
-
-_SIN_TILDE = str.maketrans("ÁÉÍÓÚÜÑáéíóúüñ", "AEIOUUNaeiouun")
 # Promesas que la página NO hace: no pueden salir en el botón.
-PROHIBIDO = re.compile(r"80|GRATIS|PLAZAS|CUPOS|ULTIMO|ULTIMAS|INSCRITOS|ESTUDIANTES|\+\d{3}|\d+ BONO|CURA|SANA|DOLOR|ENFERMEDAD")
+PROHIBIDO = re.compile(r"GRATIS|PLAZAS|CUPOS|INSCRITOS|ESTUDIANTES|ALUMNOS|\+\d{3}|\d+ BONO|"
+                       r"CURA|SANA|DOLOR|ENFERMEDAD")
+_SIN_TILDE = str.maketrans("ÁÉÍÓÚÜÑáéíóúüñ", "AEIOUUNaeiouun")
 
-# Un estilo distinto por historia, para que no salga siempre "60% OFF | ENTRA YA".
-ESTILOS = [
-    "un beneficio concreto del tema (lo que la persona va a lograr), sin hablar de descuento",
-    "el descuento de 60% con urgencia de hoy",
-    "curiosidad: que den ganas de ver qué hay del otro lado",
-    "una acción en primera persona, como si la dijera quien toca (ej. QUIERO ...)",
-    "los bonos y el acceso inmediato",
-]
+
+def _emojis_ok() -> bool:
+    """El emulador escribe emojis y tildes solo con el teclado ADB instalado (ver
+    historia_emulador.escribir). Sin él, el texto sale sin emojis ni tildes."""
+    return os.getenv("TECLADO_ADB", "") == "1"
+
+
+def largo(t: str) -> int:
+    return sum(2 if ord(c) > 0x2000 else 1 for c in t)
 
 
 def limpiar(t: str) -> str:
-    t = (t or "").strip().strip('"').translate(_SIN_TILDE).upper()
-    t = re.sub(r"[^A-Z0-9 %+\-|!?.,:/]", "", t)
+    t = (t or "").strip().strip('"').upper()
+    t = re.sub(r"[^\w %+\-|!?.,:/\"]", "", t, flags=re.UNICODE)
     return re.sub(r"\s+", " ", t).strip(" |-")
 
 
-def valido(t: str) -> bool:
-    return bool(t) and 6 <= len(t) <= MAX and bool(PERMITIDO.match(t)) and not PROHIBIDO.search(t)
+def valido(t: str, nicho: str) -> bool:
+    if not t or not (6 <= largo(t) <= MAX) or PROHIBIDO.search(t.translate(_SIN_TILDE)):
+        return False
+    # Un descuento que no es el de la página de este curso no puede salir.
+    for pct in re.findall(r"(?<!\d)\d{2}%", t):     # "100% ONLINE" no es un descuento
+        if pct != DESCUENTO.get(nicho, "60%"):
+            return False
+    return True
 
 
-def _gemini(nicho: str, evitar: list[str], estilo: str) -> str | None:
+def con_emoji(t: str, i: int) -> str:
+    if not _emojis_ok():
+        return t.translate(_SIN_TILDE)
+    e = EMOJIS_GANADORES[i % len(EMOJIS_GANADORES)]
+    # Al final va 👉 (como los ads); al principio, el resto.
+    t2 = f"{t} 👉" if e == "👉" else f"{e} {t}"
+    return t2 if largo(t2) <= MAX else t
+
+
+def _gemini(nicho: str, evitar: list[str]) -> str | None:
     claves = [os.getenv(k, "").strip() for k in ("GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3")]
+    d = DESCUENTO.get(nicho, "60%")
     pedido = (
-        f"Escribe UN texto para el botón de enlace de una historia de Instagram que vende un curso online de "
-        f"{TEMA.get(nicho, nicho)}. Tiene que dar ganas de tocar el enlace. Enfoque: {estilo}.\n"
-        f"Inspírate en estos títulos de anuncios que más clics sacaron (CTR entre paréntesis):\n- "
+        "Estos son los títulos de anuncios que más clics sacaron (CTR entre paréntesis):\n- "
         + "\n- ".join(GANADORES) +
-        f"\n\nReglas: máximo {MAX} caracteres; sin tildes, sin ñ y sin emojis; solo letras, números, espacios y % + - |. "
-        "Lo único que puedes prometer: 60% OFF, bonos, curso online, clases en video y PDF, acceso inmediato, "
-        "pago único, garantía de 7 días. NO digas 80%, gratis, plazas, cupos, último día, cantidades de alumnos "
-        "ni cuántos bonos son. No prometas curar, sanar ni aliviar enfermedades o dolores. "
+        f"\n\nEscribe UNA variante con EXACTAMENTE ese estilo (gancho corto | llamado a la acción en "
+        f"mayúsculas como HAZ CLICK, ENTRA YA, ENTRA AHORA), para el botón de enlace de una historia de "
+        f"Instagram del curso online de {nicho}. Sin emojis (los pongo yo). Máximo {MAX - 3} caracteres. "
+        f"El único descuento que existe es {d} OFF. NO digas gratis, plazas, cupos, cantidades de alumnos "
+        "ni cuántos bonos son. "
         f"No repitas ninguno de estos: {', '.join(evitar[-8:]) or 'ninguno'}.\n"
         "Responde SOLO con el texto."
     )
-    # Como mucho 4 intentos cortos: si Gemini está saturado, sale uno del banco enseguida
-    # (antes: 3 claves x 3 modelos x 40 s = minutos por historia).
     intentos = [(k, m) for k in claves if k
                 for m in ("gemini-flash-lite-latest", "gemini-flash-latest")][:4]
     for k, modelo in intentos:
-            try:
-                req = urllib.request.Request(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={k}",
-                    data=json.dumps({"contents": [{"parts": [{"text": pedido}]}],
-                                     "generationConfig": {"temperature": 1.1}}).encode(),
-                    headers={"Content-Type": "application/json"})
-                d = json.load(urllib.request.urlopen(req, timeout=15))
-                t = limpiar(d["candidates"][0]["content"]["parts"][0]["text"].splitlines()[0])
-                if valido(t) and t not in evitar:
-                    return t
-            except Exception:  # noqa: BLE001
-                continue
+        try:
+            req = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={k}",
+                data=json.dumps({"contents": [{"parts": [{"text": pedido}]}],
+                                 "generationConfig": {"temperature": 1.0}}).encode(),
+                headers={"Content-Type": "application/json"})
+            r = json.load(urllib.request.urlopen(req, timeout=15))
+            t = limpiar(r["candidates"][0]["content"]["parts"][0]["text"].splitlines()[0])
+            if valido(t, nicho) and largo(t) <= MAX - 3 and t not in evitar:
+                return t
+        except Exception:  # noqa: BLE001
+            continue
     return None
 
 
@@ -117,18 +126,21 @@ def elegir(p: dict, usados: list[str] | None = None) -> str:
     textos de ese nicho, para no repetir."""
     nicho = p.get("nicho", "")
     usados = usados or []
-    estilo = ESTILOS[(len(usados) + sum(map(ord, p.get("id", "")))) % len(ESTILOS)]
-    t = _gemini(nicho, usados, estilo)
-    if t:
-        return t
-    banco = BANCO.get(nicho) or BANCO["hidroponia"]
-    libres = [x for x in banco if x not in usados[-len(banco) + 1:]] or banco
-    # Determinístico por reel: el mismo reel da el mismo texto si se reintenta.
-    return libres[sum(map(ord, p.get("id", ""))) % len(libres)]
+    semilla = len(usados) + sum(map(ord, p.get("id", "")))
+    # Mitad plantilla de los ganadores, mitad variante de Gemini (si está).
+    t = _gemini(nicho, usados) if semilla % 2 else None
+    if not t:
+        d = DESCUENTO.get(nicho, "60%")
+        base = [x.format(d=d) for x in PLANTILLAS]
+        libres = [x for x in base if not any(x in u for u in usados[-6:])] or base
+        t = libres[semilla % len(libres)]
+    return con_emoji(t, semilla)
 
 
 if __name__ == "__main__":
-    for n in BANCO:
-        assert all(valido(x) for x in BANCO[n]), [x for x in BANCO[n] if not valido(x)]
-    print("banco ok;", {n: len(v) for n, v in BANCO.items()})
-    print("ejemplo:", elegir({"nicho": "hidroponia", "id": "stk-hidro-1"}))
+    for n in DESCUENTO:
+        for x in PLANTILLAS:
+            assert valido(x.format(d=DESCUENTO[n]), n), (n, x)
+            # que siempre entre el emoji (un emoji ocupa ~3 con el espacio)
+            assert largo(x.format(d=DESCUENTO[n])) <= MAX - 3, ("sin lugar para el emoji", x)
+    print("plantillas ok")

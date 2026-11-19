@@ -82,7 +82,39 @@ def tocar_texto(patron, espera=20):
 
 
 def escribir(t):
-    adb("shell", "input", "text", t.replace(" ", "%s"))
+    # Entre comillas simples: si no, el shell del Android corta en | & ; ( ) (18/11: con
+    # "60% OFF HOY | HAZ CLICK" quedaba solo "60% OFF HOY").
+    t = t.replace("'", "").replace(" ", "%s")
+    adb("shell", f"input text '{t}'")
+
+
+def _icono_color(st) -> bool:
+    """True si el ícono de la cadena del sticker está en los colores de Instagram
+    (naranja/rosa). Se mira el cuadrado del ícono, a la izquierda del sticker."""
+    import io
+    from PIL import Image
+    png = subprocess.run([ADB, "-s", "emulator-5554", "exec-out", "screencap", "-p"],
+                         capture_output=True).stdout
+    im = Image.open(io.BytesIO(png)).convert("RGB")
+    a, b, c, d = st["b"]
+    caja = im.crop((a + 5, b + 10, a + (d - b), d - 10))
+    rosas = sum(1 for r, g, bl in caja.getdata() if r > 200 and g < 120 and bl > 90)
+    naranjas = sum(1 for r, g, bl in caja.getdata() if r > 220 and 70 < g < 170 and bl < 90)
+    return rosas > 20 and naranjas > 10
+
+
+def estilo_color(st):
+    """El sticker de enlace cambia de aspecto cada vez que se toca (4 estilos: azul,
+    transparente, negro, y con la cadena en colores de Instagram). Tomix (18/11) quiere el de
+    colores de Instagram: se toca hasta llegar a ese, comprobándolo por el color del ícono."""
+    for _ in range(5):
+        if _icono_color(st):
+            return True
+        a, b, c, d = st["b"]
+        adb("shell", "input", "tap", str((a + c) // 2), str((b + d) // 2))
+        time.sleep(1.5)
+        st = buscar(r"^Sticker\. ") or st
+    return _icono_color(st)
 
 
 # la ubicación se rechaza siempre ("Don’t allow"): no hace falta para las historias
@@ -233,6 +265,9 @@ def publicar(nicho, archivo, texto="VER CURSO", sck="historia", cuenta="", y=0.0
     st = buscar(r"^Sticker\. ")
     if not st:
         raise SystemExit("el sticker no quedó puesto")
+    if not estilo_color(st):
+        print("aviso: no pude dejar el sticker en colores de Instagram; sale como está")
+    st = buscar(r"^Sticker\. ") or st
     if y:
         # se arrastra manteniendo apretado; la historia ocupa el ancho entero (alto = ancho*16/9)
         # el arrastre no es exacto: se mide dónde quedó y se corrige (hasta 4 veces)
