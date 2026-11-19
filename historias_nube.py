@@ -1,0 +1,144 @@
+"""Historias de Instagram con sticker de enlace, desde GitHub (18/11/2026, pedido de Tomix:
+"todos los días cada reel que sale se sube como historia, sin depender de mi PC").
+
+La API de Meta no deja poner el sticker de enlace: se usa la app de Instagram dentro de un
+emulador de Android. El emulador (con las 4 cuentas ya abiertas) es una copia del de la PC,
+guardada como descarga privada de este repo. El workflow lo prende y corre esto.
+
+- Lee `stock/publicados.json` de R2 (por la puerta de GitHub) para saber qué salió.
+- El video sale de R2 (`reels/<id>.mp4`) o, si ya no está, de Instagram (media_url).
+- Lo hecho queda en estado.json, que el workflow commitea al terminar.
+- Un reel con más de MAX_HORAS de publicado ya no se sube (llegó tarde).
+"""
+import json, os, subprocess, sys, tempfile, time, urllib.parse, urllib.request
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+ESTADO = ROOT / "estado.json"
+MAX_HORAS = 14
+Y_STICKER = 0.73          # los subtítulos están al ~59% del alto: el link va debajo
+CUENTAS = {               # nicho: (usuario de Instagram, página de Facebook)
+    "hidroponia": ("ecosistema.hidroponico", "615394648318530"),
+    "bonsai": ("bonsai.en.casa.desde.cero", "620810857774404"),
+    "terrarios": ("terrario.academia", "227267413796018"),
+    "herbologia": ("academia.herbologica", "1094407060431618"),
+}
+GRAPH = "https://graph.facebook.com/v21.0"
+
+
+def log(*a):
+    print(datetime.now(timezone.utc).strftime("%H:%M"), *a, flush=True)
+
+
+def _puerta(key):
+    base = os.environ["PUERTA_R2_URL"].strip().rstrip("/")
+    req = urllib.request.Request(f"{base}/o/{urllib.parse.quote(key)}")
+    req.add_header("x-clave", os.environ["PUERTA_R2_KEY"].strip())
+    req.add_header("user-agent", "eugenia-historias/1.0")
+    return urllib.request.urlopen(req, timeout=600)
+
+
+def get_json(key):
+    try:
+        with _puerta(key) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def bajar_reel(p, destino):
+    """De R2 si sigue ahí; si no, de Instagram con el token de la página."""
+    try:
+        with _puerta(p.get("video_key") or f"reels/{p['id']}.mp4") as r, open(destino, "wb") as f:
+            while True:
+                b = r.read(1 << 20)
+                if not b:
+                    break
+                f.write(b)
+        if destino.stat().st_size > 100_000:
+            return
+    except Exception:  # noqa: BLE001
+        pass
+    tb = os.environ["META_PAGE_ACCESS_TOKEN"].strip()
+    pagina = CUENTAS[p["nicho"]][1]
+    tok = json.load(urllib.request.urlopen(f"{GRAPH}/{pagina}?fields=access_token&access_token={tb}",
+                                           timeout=60))["access_token"]
+    d = json.load(urllib.request.urlopen(
+        f"{GRAPH}/{p['ig_media_id']}?fields=media_url&access_token={tok}", timeout=60))
+    urllib.request.urlretrieve(d["media_url"], destino)
+
+
+def ajustar_duracion(src, dst):
+    dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip() or 0)
+    if dur <= 59.5:
+        return src
+    f = dur / 59.5
+    if f <= 1.06:
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-filter_complex",
+                        f"[0:v]setpts=PTS/{f}[v];[0:a]atempo={f}[a]", "-map", "[v]", "-map", "[a]",
+                        "-c:v", "libx264", "-crf", "20", "-preset", "veryfast", "-c:a", "aac", str(dst)], check=True)
+    else:
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-t", "59.5", "-c", "copy", str(dst)], check=True)
+    return dst
+
+
+def texto_boton(p) -> str:
+    """El texto del sticker. Ver textos_boton.py (si existe) para que no sea siempre igual."""
+    try:
+        import textos_boton
+        return textos_boton.elegir(p)
+    except Exception:  # noqa: BLE001
+        return "VER CURSO"
+
+
+def main():
+    probar = "--probar" in sys.argv
+    try:
+        est = json.loads(ESTADO.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        est = {}
+    ahora = datetime.now(timezone.utc)
+    if not est.get("desde"):
+        # Arranca con lo publicado en las últimas horas (no con todo lo viejo).
+        est = {"desde": (ahora - timedelta(hours=MAX_HORAS)).isoformat(), "hechas": {}, "fallas": {}}
+    hechas, fallas = est.setdefault("hechas", {}), est.setdefault("fallas", {})
+    limite = (ahora - timedelta(hours=MAX_HORAS)).isoformat()
+    pubs = get_json("stock/publicados.json") or []
+    pend = [p for p in pubs
+            if p.get("nicho") in CUENTAS and p.get("id") and p["id"] not in hechas
+            and str(p.get("ts", "")) >= max(est["desde"], limite)
+            and fallas.get(p["id"], 0) < 3 and p.get("ig_media_id")]
+    log(f"pendientes: {len(pend)}")
+    for p in pend:
+        log("  ·", p["nicho"], p["id"], p["ts"])
+    if probar or not pend:
+        ESTADO.write_text(json.dumps(est, ensure_ascii=False, indent=1), encoding="utf-8")
+        return 0
+
+    import historia_emulador as he
+    for p in pend:
+        n, rid = p["nicho"], p["id"]
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            bajar_reel(p, tmp / "reel.mp4")
+            video = ajustar_duracion(tmp / "reel.mp4", tmp / "reel_59.mp4")
+            sck = "historia-" + n + "-" + rid.split("-", 2)[-1]
+            he.publicar(n, str(video), texto=texto_boton(p), sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
+            time.sleep(90)            # que termine de subir antes de cambiar de cuenta
+            hechas[rid] = datetime.now(timezone.utc).isoformat()
+            log(f"historia subida: {n} {rid}")
+        except (Exception, SystemExit) as e:   # noqa: BLE001
+            fallas[rid] = fallas.get(rid, 0) + 1
+            log(f"falló {n} {rid} (intento {fallas[rid]}): {str(e)[:200]}")
+            with open(ROOT / f"falla_{rid}.png", "wb") as f:
+                subprocess.run([he.ADB, "-s", "emulator-5554", "exec-out", "screencap", "-p"], stdout=f)
+            he.adb("shell", "input", "keyevent", "4")
+            he.tocar_texto(r"^(Discard|Descartar)$", 3)
+        ESTADO.write_text(json.dumps(est, ensure_ascii=False, indent=1), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
