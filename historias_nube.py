@@ -84,13 +84,18 @@ def ajustar_duracion(src, dst):
     return dst
 
 
-def texto_boton(p) -> str:
-    """El texto del sticker. Ver textos_boton.py (si existe) para que no sea siempre igual."""
+def texto_boton(p, est) -> str:
+    """El texto del sticker (textos_boton.py): no siempre "VER CURSO". Se guardan los
+    últimos de cada nicho en estado.json para no repetirlos."""
+    usados = est.setdefault("textos", {}).setdefault(p["nicho"], [])
     try:
         import textos_boton
-        return textos_boton.elegir(p)
+        t = textos_boton.elegir(p, usados)
     except Exception:  # noqa: BLE001
-        return "VER CURSO"
+        t = "VER CURSO"
+    usados.append(t)
+    del usados[:-15]
+    return t
 
 
 def main():
@@ -125,7 +130,9 @@ def main():
             bajar_reel(p, tmp / "reel.mp4")
             video = ajustar_duracion(tmp / "reel.mp4", tmp / "reel_59.mp4")
             sck = "historia-" + n + "-" + rid.split("-", 2)[-1]
-            he.publicar(n, str(video), texto=texto_boton(p), sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
+            texto = texto_boton(p, est)
+            log(f"  botón: {texto}")
+            he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
             time.sleep(90)            # que termine de subir antes de cambiar de cuenta
             hechas[rid] = datetime.now(timezone.utc).isoformat()
             log(f"historia subida: {n} {rid}")

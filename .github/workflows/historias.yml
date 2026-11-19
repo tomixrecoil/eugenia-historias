@@ -24,6 +24,9 @@ jobs:
       PUERTA_R2_URL: ${{ secrets.PUERTA_R2_URL }}
       PUERTA_R2_KEY: ${{ secrets.PUERTA_R2_KEY }}
       META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
       ANDROID_AVD_HOME: /mnt/avd
     steps:
       - uses: actions/checkout@v4
