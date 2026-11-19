@@ -186,6 +186,18 @@ def cambiar_cuenta(usuario):
         adb("shell", "input", "keyevent", "4")
         raise SystemExit(f"la cuenta {usuario} no está en el Instagram del emulador")
     tocar(destino); time.sleep(6)
+    # "You can't switch accounts while you're uploading something" (18/11): una historia
+    # anterior todavía subiendo traba el cambio. Se espera a que termine y se reintenta.
+    for _ in range(6):
+        if not buscar(r"switch accounts while you're uploading|cambiar de cuenta mientras"):
+            break
+        tocar_texto(r"^(OK|Aceptar)$", 3)
+        time.sleep(60)
+        us, ns = _lista_cuentas()
+        destino = next((n for n in us if n["text"] == usuario), None)
+        if not destino:
+            break
+        tocar(destino); time.sleep(6)
     if buscar(r"^(Password|Contraseña)$"):
         raise SystemExit(f"Instagram pide la contraseña de {usuario}: hay que entrar a mano")
     us, ns = _lista_cuentas()
