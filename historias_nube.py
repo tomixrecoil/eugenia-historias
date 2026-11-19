@@ -69,6 +69,19 @@ def bajar_reel(p, destino):
     urllib.request.urlretrieve(d["media_url"], destino)
 
 
+def historias_vivas(n):
+    """Ids de las historias que Instagram muestra hoy en la cuenta (API de Meta). Es la
+    prueba de que se subió: el 19/11 la última de cada corrida se perdía porque el
+    emulador se apagaba antes de terminar de subirla, y el script la daba por hecha."""
+    tb = os.environ["META_PAGE_ACCESS_TOKEN"].strip()
+    d = json.load(urllib.request.urlopen(
+        f"{GRAPH}/{CUENTAS[n][1]}?fields=access_token,instagram_business_account&access_token={tb}", timeout=60))
+    ig = d["instagram_business_account"]["id"]
+    s = json.load(urllib.request.urlopen(
+        f"{GRAPH}/{ig}/stories?fields=timestamp&access_token={d['access_token']}", timeout=60))
+    return {x["id"] for x in s.get("data", [])}
+
+
 def ajustar_duracion(src, dst):
     dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                                 "-of", "csv=p=0", str(src)], capture_output=True, text=True).stdout.strip() or 0)
@@ -121,13 +134,11 @@ def main():
     # --cada-cuenta (19/11, Tomix: "que todas las cuentas queden con historias ahora"): la
     # cuenta que no tiene una historia nuestra de las últimas 24 h sube su último reel.
     if "--cada-cuenta" in sys.argv:
-        hace24 = (ahora - timedelta(hours=24)).isoformat()
         for n in CUENTAS:
             if any(p["nicho"] == n for p in pend):
                 continue
-            ids_n = {p["id"] for p in pubs if p.get("nicho") == n}
-            if any(hechas.get(i, "") >= hace24 for i in ids_n):
-                continue                      # ya tiene una historia viva
+            if historias_vivas(n):
+                continue                      # Instagram ya muestra una historia viva
             ult = [p for p in pubs if p.get("nicho") == n and p.get("ig_media_id")]
             if ult:
                 pend.append(max(ult, key=lambda p: str(p.get("ts", ""))))
@@ -148,10 +159,17 @@ def main():
             sck = "historia-" + n + "-" + rid.split("-", 2)[-1]
             texto = texto_boton(p, est)
             log(f"  botón: {texto}")
+            antes = historias_vivas(n)
             he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
-            time.sleep(90)            # que termine de subir antes de cambiar de cuenta
+            # Hecha recién cuando Instagram la muestra (hasta 10 min; el emulador sigue prendido)
+            for _ in range(40):
+                time.sleep(15)
+                if historias_vivas(n) - antes:
+                    break
+            else:
+                raise RuntimeError("Instagram no muestra la historia nueva después de 10 min")
             hechas[rid] = datetime.now(timezone.utc).isoformat()
-            log(f"historia subida: {n} {rid}")
+            log(f"historia subida y vista en Instagram: {n} {rid}")
         except (Exception, SystemExit) as e:   # noqa: BLE001
             fallas[rid] = fallas.get(rid, 0) + 1
             log(f"falló {n} {rid} (intento {fallas[rid]}): {str(e)[:200]}")
