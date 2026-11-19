@@ -9,7 +9,7 @@ Medido en el emulador el 18/11:
 
 Cómo elige: el MISMO formato de los títulos de los ads que más clics sacaron
 (gancho | llamado: HAZ CLICK, ENTRA YA, ENTRA AHORA...), con el descuento que muestra la
-página de ESE curso (bonsái 80%, los demás 60%). Gemini hace variantes en ese formato; si no
+página de ESE curso (las 4 en 60% desde el 19/11). Gemini hace variantes en ese formato; si no
 está o falla, sale uno de PLANTILLAS. Siempre con un emoji de los que usan los ads ganadores
 al principio o al final. Sin tildes ni ñ si el emulador no tiene el teclado ADB (EMOJIS=False).
 """
@@ -32,7 +32,7 @@ GANADORES = [
 EMOJIS_GANADORES = ["🎁", "💥", "⏳", "🎓", "🔥", "🔗", "👉", "🌐"]
 
 # Lo que muestra la página de cada curso (revisado en la página en vivo, 18/11).
-DESCUENTO = {"hidroponia": "60%", "bonsai": "80%", "terrarios": "60%", "herbologia": "60%"}
+DESCUENTO = {"hidroponia": "60%", "bonsai": "60%", "terrarios": "60%", "herbologia": "60%"}   # 19/11: las 4 en 60%
 
 # Las mismas estructuras de los ganadores, con el descuento de cada curso.
 PLANTILLAS = [
