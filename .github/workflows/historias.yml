@@ -46,6 +46,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android/sdk/ndk || true
           sudo mkdir -p /mnt/avd && sudo chown -R "$USER" /mnt/avd
           sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg >/dev/null
+          pip install -q pillow
           df -h / /mnt
 
       - name: Imagen de Android (cache)
