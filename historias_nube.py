@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 ESTADO = ROOT / "estado.json"
 MAX_HORAS = 14
-Y_STICKER = 0.73          # los subtítulos están al ~59% del alto: el link va debajo
+Y_STICKER = 0.68          # subtítulos al ~59% del alto: el botón justo debajo, en el medio (19/11)
 CUENTAS = {               # nicho: (usuario de Instagram, página de Facebook)
     "hidroponia": ("ecosistema.hidroponico", "615394648318530"),
     "bonsai": ("bonsai.en.casa.desde.cero", "620810857774404"),
@@ -142,6 +142,17 @@ def main():
             ult = [p for p in pubs if p.get("nicho") == n and p.get("ig_media_id")]
             if ult:
                 pend.append(max(ult, key=lambda p: str(p.get("ts", ""))))
+    # --todas (19/11, Tomix: "subí el reel más reciente como historia en cada cuenta"):
+    # el último reel de cada cuenta, tenga o no historia. --sin-publicar: solo arma la
+    # historia de la primera cuenta y saca la captura del editor (prueba de la posición).
+    if "--todas" in sys.argv or "--sin-publicar" in sys.argv:
+        pend = []
+        for n in CUENTAS:
+            ult = [p for p in pubs if p.get("nicho") == n and p.get("ig_media_id")]
+            if ult:
+                pend.append(max(ult, key=lambda p: str(p.get("ts", ""))))
+        if "--sin-publicar" in sys.argv:
+            pend = pend[:1]
     log(f"pendientes: {len(pend)}")
     for p in pend:
         log("  ·", p["nicho"], p["id"], p["ts"])
@@ -160,6 +171,10 @@ def main():
             texto = texto_boton(p, est)
             log(f"  botón: {texto}")
             antes = historias_vivas(n)
+            if "--sin-publicar" in sys.argv:
+                he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER,
+                            sin_publicar=True)
+                continue
             he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
             # Hecha recién cuando Instagram la muestra (hasta 10 min; el emulador sigue prendido)
             for _ in range(40):

@@ -296,8 +296,9 @@ def publicar(nicho, archivo, texto="VER CURSO", sck="historia", cuenta="", y=0.0
     if not tocar_texto(r"^(Done|Listo)$", 3):
         # con algunos videos el botón es un ✓ sin texto, arriba a la derecha de "Add link" (14/11)
         t = buscar(r"^(Add link|Agregar enlace)$")
-        y = (t["b"][1] + t["b"][3]) // 2 if t else 593
-        adb("shell", "input", "tap", "1005", str(y))
+        # (19/11) antes pisaba "y" (la altura del sticker) y el sticker terminaba abajo de todo
+        yb = (t["b"][1] + t["b"][3]) // 2 if t else 593
+        adb("shell", "input", "tap", "1005", str(yb))
     time.sleep(2)
     st = buscar(r"^Sticker\. ")
     if not st:
@@ -317,7 +318,12 @@ def publicar(nicho, archivo, texto="VER CURSO", sck="historia", cuenta="", y=0.0
             adb("shell", "input", "swipe", str(x0), str(y0), str(x0), str(y0 + (meta - y0)), "1800")
             time.sleep(1.5)
             st = buscar(r"^Sticker\. ") or st
-    adb("exec-out", "screencap", "-p")  # deja la pantalla viva
+    if st:
+        print(f"sticker en y={(st['b'][1] + st['b'][3]) // 2} (meta {int(1080 * 16 / 9 * y) if y else '-'})")
+    # captura del editor antes de publicar, para revisar dónde quedó el botón
+    with open(f"editor_{nicho}.png", "wb") as f:
+        f.write(subprocess.run([ADB, "-s", "emulator-5554", "exec-out", "screencap", "-p"],
+                               capture_output=True).stdout)
     if sin_publicar:
         print("listo para publicar (no se publicó)"); return 0
     if not tocar_texto(r"^(Your story|Your stories|Tu historia|Tus historias)$"):

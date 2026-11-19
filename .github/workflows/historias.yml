@@ -13,6 +13,11 @@ on:
         description: "Subir el último reel de cada cuenta que no tenga historia de las últimas 24 h"
         type: boolean
         default: false
+      modo:
+        description: "todas = último reel de cada cuenta, tenga o no historia; sin-publicar = prueba de 1 cuenta sin publicar"
+        type: choice
+        options: ["", "todas", "sin-publicar"]
+        default: ""
 
 concurrency:
   group: historias
@@ -38,7 +43,7 @@ jobs:
       - name: ¿Hay historias pendientes?
         id: pend
         run: |
-          python3 historias_nube.py --probar ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} | tee probar.txt
+          python3 historias_nube.py --probar ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} | tee probar.txt
           n=$(grep -oP 'pendientes: \K\d+' probar.txt || echo 0)
           echo "n=$n" >> "$GITHUB_OUTPUT"
 
@@ -130,7 +135,7 @@ jobs:
 
       - name: Historias
         if: steps.pend.outputs.n != '0'
-        run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }}
+        run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }}
 
       - name: Guardar lo hecho
         if: always()
@@ -145,10 +150,10 @@ jobs:
         env:
           EMU_CLAVE: ${{ secrets.EMU_CLAVE }}
         run: |
-          ls emulador.log falla_*.png 2>/dev/null | grep -q . || exit 0
-          tar -czf diag.tgz falla_*.png emulador.log 2>/dev/null || tar -czf diag.tgz emulador.log
+          ls emulador.log falla_*.png editor_*.png 2>/dev/null | grep -q . || exit 0
+          tar -czf diag.tgz $(ls falla_*.png editor_*.png 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
-          rm -f diag.tgz falla_*.png
+          rm -f diag.tgz falla_*.png editor_*.png
 
       - uses: actions/upload-artifact@v4
         if: always()
