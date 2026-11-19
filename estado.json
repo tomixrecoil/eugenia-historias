@@ -10,10 +10,10 @@
   "stk-hidro-081923": "2026-11-18T23:05:49.066550+00:00",
   "stk-herbo-602848-m": "2026-11-18T23:09:11.760897+00:00",
   "stk-bonsa-201504": "2026-11-19T05:51:42.980035+00:00",
-  "stk-terra-007621-m": "2026-11-19T06:31:05.673243+00:00",
-  "stk-hidro-796758": "2026-11-19T13:37:46.768652+00:00",
-  "stk-bonsa-509702": "2026-11-19T13:48:15.724161+00:00",
-  "stk-herbo-025888-m": "2026-11-19T13:56:52.368373+00:00"
+  "stk-terra-007621-m": "2026-11-19T14:38:26.929814+00:00",
+  "stk-hidro-796758": "2026-11-19T14:26:57.879891+00:00",
+  "stk-bonsa-509702": "2026-11-19T14:32:31.297139+00:00",
+  "stk-herbo-025888-m": "2026-11-19T14:45:27.745650+00:00"
  },
  "fallas": {},
  "textos": {
@@ -22,16 +22,20 @@
    "🔥 80% OFF HOY | HAZ CLICK",
    "🔗 80% DESCUENTO | HAZ CLICK",
    "CURSO 100% ONLINE | HAZ CLICK 👉",
-   "⏳ 80% OFF + BONOS | ENTRA YA"
+   "⏳ 80% OFF + BONOS | ENTRA YA",
+   "🎓 80% OFF HOY | ENTRA YA"
   ],
   "terrarios": [
-   "🔥 CURSO ONLINE 60% OFF | ENTRA"
+   "🔥 CURSO ONLINE 60% OFF | ENTRA",
+   "🔗 60% OFF ESTA SEMANA | ENTRA"
   ],
   "hidroponia": [
-   "🔥 OFERTA EXCLUSIVA | ENTRA YA"
+   "🔥 OFERTA EXCLUSIVA | ENTRA YA",
+   "🔗 60% OFF | ENTRA AHORA"
   ],
   "herbologia": [
-   "🔗 60% OFF | ENTRA AHORA"
+   "🔗 60% OFF | ENTRA AHORA",
+   "60% OFF HOY | HAZ CLICK 👉"
   ]
  }
 }
