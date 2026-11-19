@@ -72,11 +72,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          D=/mnt/avd/eugenia_ig.avd; mkdir -p $D /mnt/dl
-          gh release download avd -R ${{ github.repository }} -D /mnt/dl
-          cat /mnt/dl/userdata.part0 /mnt/dl/userdata.part1 /mnt/dl/userdata.part2 > $D/userdata-qemu.img
-          rm -f /mnt/dl/userdata.part*
-          tar -xzf /mnt/dl/avd-chico.tgz -C $D
+          D=/mnt/avd/eugenia_ig.avd; mkdir -p $D /mnt/avd/dl
+          gh release download avd -R ${{ github.repository }} -D /mnt/avd/dl
+          cat /mnt/avd/dl/userdata.part0 /mnt/avd/dl/userdata.part1 /mnt/avd/dl/userdata.part2 > $D/userdata-qemu.img
+          rm -f /mnt/avd/dl/userdata.part*
+          tar -xzf /mnt/avd/dl/avd-chico.tgz -C $D
           sed -i 's#\\#/#g' $D/config.ini
           printf 'avd.ini.encoding=UTF-8\npath=%s\ntarget=android-34\n' "$D" > /mnt/avd/eugenia_ig.ini
           ls -la $D
