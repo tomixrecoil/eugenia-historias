@@ -118,6 +118,19 @@ def main():
             if p.get("nicho") in CUENTAS and p.get("id") and p["id"] not in hechas
             and str(p.get("ts", "")) >= max(est["desde"], limite)
             and fallas.get(p["id"], 0) < 3 and p.get("ig_media_id")]
+    # --cada-cuenta (19/11, Tomix: "que todas las cuentas queden con historias ahora"): la
+    # cuenta que no tiene una historia nuestra de las últimas 24 h sube su último reel.
+    if "--cada-cuenta" in sys.argv:
+        hace24 = (ahora - timedelta(hours=24)).isoformat()
+        for n in CUENTAS:
+            if any(p["nicho"] == n for p in pend):
+                continue
+            ids_n = {p["id"] for p in pubs if p.get("nicho") == n}
+            if any(hechas.get(i, "") >= hace24 for i in ids_n):
+                continue                      # ya tiene una historia viva
+            ult = [p for p in pubs if p.get("nicho") == n and p.get("ig_media_id")]
+            if ult:
+                pend.append(max(ult, key=lambda p: str(p.get("ts", ""))))
     log(f"pendientes: {len(pend)}")
     for p in pend:
         log("  ·", p["nicho"], p["id"], p["ts"])

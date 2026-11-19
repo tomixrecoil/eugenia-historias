@@ -4,11 +4,15 @@ name: Historias
 # después y de nuevo 2 h más tarde por si algo falló o GitHub se demoró.
 on:
   schedule:
-    - cron: "45 9 * * *"     # 06:45 ART
-    - cron: "45 11 * * *"    # 08:45 ART (repaso)
-    - cron: "45 21 * * *"    # 18:45 ART
-    - cron: "45 23 * * *"    # 20:45 ART (repaso)
+    # Cada 15 min (19/11, Tomix: "cada vez que se sube 1 reel, que se suba de historia").
+    # Sin pendientes termina en segundos y no prende el emulador.
+    - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      cada_cuenta:
+        description: "Subir el último reel de cada cuenta que no tenga historia de las últimas 24 h"
+        type: boolean
+        default: false
 
 concurrency:
   group: historias
@@ -34,7 +38,7 @@ jobs:
       - name: ¿Hay historias pendientes?
         id: pend
         run: |
-          python3 historias_nube.py --probar | tee probar.txt
+          python3 historias_nube.py --probar ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} | tee probar.txt
           n=$(grep -oP 'pendientes: \K\d+' probar.txt || echo 0)
           echo "n=$n" >> "$GITHUB_OUTPUT"
 
@@ -126,7 +130,7 @@ jobs:
 
       - name: Historias
         if: steps.pend.outputs.n != '0'
-        run: python3 historias_nube.py
+        run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }}
 
       - name: Guardar lo hecho
         if: always()
