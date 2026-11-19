@@ -93,7 +93,7 @@ jobs:
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
-            b=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '')
+            b=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -dc '0-9')
             [ $((i % 6)) = 0 ] && echo "$(date +%T) adb=$st boot=$b | $(tail -1 emulador.log | cut -c1-120)"
             [ "$b" = "1" ] && ok=1 && break
             sleep 10
