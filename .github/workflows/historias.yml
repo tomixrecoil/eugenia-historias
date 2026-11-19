@@ -69,16 +69,18 @@ jobs:
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
           echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
 
-      - name: Armar el emulador (copia del de la PC)
+      - name: Armar el emulador (copia cifrada del de la PC)
         if: steps.pend.outputs.n != '0'
         env:
           GH_TOKEN: ${{ github.token }}
+          EMU_CLAVE: ${{ secrets.EMU_CLAVE }}
         run: |
           D=/mnt/avd/eugenia_ig.avd; mkdir -p $D /mnt/avd/dl
-          gh release download avd -R ${{ github.repository }} -D /mnt/avd/dl
-          cat /mnt/avd/dl/userdata.part0 /mnt/avd/dl/userdata.part1 /mnt/avd/dl/userdata.part2 > $D/userdata-qemu.img
+          gh release download avd-cifrado -R ${{ github.repository }} -D /mnt/avd/dl
+          des() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:EMU_CLAVE -in "$1"; }
+          { des /mnt/avd/dl/userdata.part0.enc; des /mnt/avd/dl/userdata.part1.enc; des /mnt/avd/dl/userdata.part2.enc; } > $D/userdata-qemu.img
           rm -f /mnt/avd/dl/userdata.part*
-          tar -xzf /mnt/avd/dl/avd-chico.tgz -C $D
+          des /mnt/avd/dl/avd-chico.tgz.enc | tar -xz -C $D
           sed -i 's#\\#/#g' $D/config.ini
           printf 'avd.ini.encoding=UTF-8\npath=%s\ntarget=android-34\n' "$D" > /mnt/avd/eugenia_ig.ini
           ls -la $D
@@ -86,10 +88,19 @@ jobs:
       - name: Prender el emulador
         if: steps.pend.outputs.n != '0'
         timeout-minutes: 25
+        env:
+          ADB_KEY: ${{ secrets.ADB_KEY }}
+          ADB_KEY_PUB: ${{ secrets.ADB_KEY_PUB }}
         run: |
           ls -la /dev/kvm || true
+          # La clave de adb de la PC: el Android de la copia solo acepta esa (si no: "unauthorized")
+          mkdir -p ~/.android
+          printf '%s\n' "$ADB_KEY" > ~/.android/adbkey
+          printf '%s\n' "$ADB_KEY_PUB" > ~/.android/adbkey.pub
+          chmod 600 ~/.android/adbkey
+          adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 3072 -cores 2 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
@@ -120,13 +131,20 @@ jobs:
           git add estado.json
           git diff --cached --quiet || (git commit -q -m "historias $(date -u +%F' '%H:%M)" && git push -q)
 
-      - name: Capturas y log si algo falló
+      - name: Capturas y log cifrados (el repo es publico)
         if: always()
-        uses: actions/upload-artifact@v4
+        env:
+          EMU_CLAVE: ${{ secrets.EMU_CLAVE }}
+        run: |
+          ls emulador.log falla_*.png 2>/dev/null | grep -q . || exit 0
+          tar -czf diag.tgz falla_*.png emulador.log 2>/dev/null || tar -czf diag.tgz emulador.log
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
+          rm -f diag.tgz falla_*.png
+
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: historias-${{ github.run_id }}
-          path: |
-            falla_*.png
-            emulador.log
+          name: diag-${{ github.run_id }}
+          path: diag.tgz.enc
           retention-days: 7
           if-no-files-found: ignore
