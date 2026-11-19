@@ -89,11 +89,11 @@ jobs:
         run: |
           ls -la /dev/kvm || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim             -no-snapshot -gpu swiftshader_indirect -memory 3072 -cores 2 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 3072 -cores 2 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
-            b=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '')
+            b=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '')
             [ $((i % 6)) = 0 ] && echo "$(date +%T) adb=$st boot=$b | $(tail -1 emulador.log | cut -c1-120)"
             [ "$b" = "1" ] && ok=1 && break
             sleep 10
