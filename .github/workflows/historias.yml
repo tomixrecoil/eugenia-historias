@@ -96,6 +96,10 @@ jobs:
           adb shell getprop sys.boot_completed
           sleep 20
           adb shell input keyevent 82
+          # Teclado ADB (github.com/senzhk/ADBKeyBoard, 18/11): emojis y tildes en el sticker
+          adb install -r apk/adbkeyboard.apk
+          adb shell ime enable com.android.adbkeyboard/.AdbIME
+          adb shell ime set com.android.adbkeyboard/.AdbIME
 
       - name: Historias
         if: steps.pend.outputs.n != '0'

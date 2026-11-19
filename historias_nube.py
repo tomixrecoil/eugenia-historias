@@ -87,6 +87,9 @@ def ajustar_duracion(src, dst):
 def texto_boton(p, est) -> str:
     """El texto del sticker (textos_boton.py): no siempre "VER CURSO". Se guardan los
     últimos de cada nicho en estado.json para no repetirlos."""
+    # Con el teclado ADB el botón lleva emoji; sin él, solo letras (18/11).
+    import historia_emulador as _he
+    os.environ["TECLADO_ADB"] = "1" if _he.teclado_adb() else ""
     usados = est.setdefault("textos", {}).setdefault(p["nicho"], [])
     try:
         import textos_boton

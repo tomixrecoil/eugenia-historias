@@ -81,7 +81,27 @@ def tocar_texto(patron, espera=20):
     return False
 
 
+IME_ADB = "com.android.adbkeyboard/.AdbIME"
+
+
+def teclado_adb() -> bool:
+    """True si está el teclado ADB (ADBKeyBoard, github.com/senzhk/ADBKeyBoard, instalado el
+    18/11 con OK de Tomix). Con él se escriben emojis, tildes y ñ en el sticker; sin él,
+    `input text` solo manda letras básicas. Lo deja elegido como teclado si hace falta."""
+    if "com.android.adbkeyboard" not in adb("shell", "pm", "list", "packages", "com.android.adbkeyboard"):
+        return False
+    if adb("shell", "settings", "get", "secure", "default_input_method").strip() != IME_ADB:
+        adb("shell", "ime", "enable", IME_ADB)
+        adb("shell", "ime", "set", IME_ADB)
+    return True
+
+
 def escribir(t):
+    if teclado_adb():
+        import base64
+        b64 = base64.b64encode(t.encode("utf-8")).decode()
+        adb("shell", "am", "broadcast", "-a", "ADB_INPUT_B64", "--es", "msg", b64)
+        return
     # Entre comillas simples: si no, el shell del Android corta en | & ; ( ) (18/11: con
     # "60% OFF HOY | HAZ CLICK" quedaba solo "60% OFF HOY").
     t = t.replace("'", "").replace(" ", "%s")
