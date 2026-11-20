@@ -110,7 +110,7 @@ jobs:
           chmod 600 ~/.android/adbkey
           adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature -Vulkan -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature -Vulkan,-HardwareDecoder -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
@@ -156,7 +156,9 @@ jobs:
           { echo "==== dmesg"; sudo dmesg 2>/dev/null | grep -iE "killed process|out of memory|oom|qemu" | tail -20;
             echo "==== logcat crash"; timeout 20 adb logcat -b crash -d 2>/dev/null | tail -60;
             echo "==== procesos"; ps aux --sort=-%mem | head -8; free -m; } >> emulador.log 2>&1 || true
-          tar -czf diag.tgz $(ls falla_*.png editor_*.png 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
+          cp /tmp/android-runner/emu-crash-*.db/*/*.dmp . 2>/dev/null || true
+          ls -R /tmp/android-runner 2>/dev/null | tail -20 >> emulador.log || true
+          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
           rm -f diag.tgz falla_*.png editor_*.png
 
