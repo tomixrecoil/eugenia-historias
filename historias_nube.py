@@ -76,9 +76,15 @@ def historias_vivas(n):
     tb = os.environ["META_PAGE_ACCESS_TOKEN"].strip()
     d = json.load(urllib.request.urlopen(
         f"{GRAPH}/{CUENTAS[n][1]}?fields=access_token,instagram_business_account&access_token={tb}", timeout=60))
+    tok = d["access_token"]
+    if "instagram_business_account" not in d:
+        # 20/11: con el token de usuario Meta a veces no devuelve la cuenta de IG de hidroponía
+        # (falló 3 veces y la historia no salió). Con el token de la propia página sí.
+        d = json.load(urllib.request.urlopen(
+            f"{GRAPH}/{CUENTAS[n][1]}?fields=instagram_business_account&access_token={tok}", timeout=60))
     ig = d["instagram_business_account"]["id"]
     s = json.load(urllib.request.urlopen(
-        f"{GRAPH}/{ig}/stories?fields=timestamp&access_token={d['access_token']}", timeout=60))
+        f"{GRAPH}/{ig}/stories?fields=timestamp&access_token={tok}", timeout=60))
     return {x["id"] for x in s.get("data", [])}
 
 
