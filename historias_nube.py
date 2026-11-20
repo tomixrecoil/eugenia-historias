@@ -136,7 +136,10 @@ def main():
     pend = [p for p in pubs
             if p.get("nicho") in CUENTAS and p.get("id") and p["id"] not in hechas
             and str(p.get("ts", "")) >= max(est["desde"], limite)
-            and fallas.get(p["id"], 0) < 3 and p.get("ig_media_id")]
+            and p.get("ig_media_id")]
+    # 20/11 (Tomix: "reintentemos después de 3, elimina esa regla"): ya no hay tope de intentos.
+    # Se reintenta en cada corrida mientras el reel tenga menos de MAX_HORAS (el conteo de
+    # fallas queda solo como registro).
     # --cada-cuenta (19/11, Tomix: "que todas las cuentas queden con historias ahora"): la
     # cuenta que no tiene una historia nuestra de las últimas 24 h sube su último reel.
     if "--cada-cuenta" in sys.argv:
