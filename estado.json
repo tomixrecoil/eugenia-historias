@@ -21,7 +21,7 @@
  },
  "fallas": {
   "stk-herbo-065761-m": 1,
-  "stk-hidro-999328": 3
+  "stk-hidro-999328": 4
  },
  "textos": {
   "bonsai": [
@@ -48,7 +48,8 @@
    "💥 60% DE DESCUENTO | ENTRA YA",
    "⏳ TOCA MAS INFORMACION",
    "🎓 60% OFF HOY | ENTRA YA",
-   "🔥 60% OFF ESTA SEMANA | ENTRA"
+   "🔥 60% OFF ESTA SEMANA | ENTRA",
+   "🔗 60% OFF HOY | ENTRA AHORA"
   ],
   "herbologia": [
    "🔗 60% OFF | ENTRA AHORA",
