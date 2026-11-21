@@ -13,6 +13,10 @@ on:
         description: "Subir el último reel de cada cuenta que no tenga historia de las últimas 24 h"
         type: boolean
         default: false
+      solo:
+        description: "Solo esta cuenta (hidroponia, bonsai, terrarios, herbologia): su último reel, ya"
+        type: string
+        default: ""
       modo:
         description: "todas = último reel de cada cuenta, tenga o no historia; sin-publicar = prueba de 1 cuenta sin publicar"
         type: choice
@@ -43,7 +47,7 @@ jobs:
       - name: ¿Hay historias pendientes?
         id: pend
         run: |
-          python3 historias_nube.py --probar ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} | tee probar.txt
+          python3 historias_nube.py --probar ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} ${{ inputs.solo && format('--solo={0}', inputs.solo) || '' }} | tee probar.txt
           n=$(grep -oP 'pendientes: \K\d+' probar.txt || echo 0)
           echo "n=$n" >> "$GITHUB_OUTPUT"
 
@@ -136,7 +140,7 @@ jobs:
 
       - name: Historias
         if: steps.pend.outputs.n != '0'
-        run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }}
+        run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} ${{ inputs.solo && format('--solo={0}', inputs.solo) || '' }}
 
       - name: Guardar el emulador validado en la nube
         # 21/11: si en esta corrida se cargó un código de Instagram, la copia del emulador

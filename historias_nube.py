@@ -205,6 +205,12 @@ def main():
                 pend.append(max(ult, key=lambda p: str(p.get("ts", ""))))
         if "--sin-publicar" in sys.argv:
             pend = pend[:1]
+    # --solo=<nicho> (21/11, Tomix: "forzá la nube ya"): el último reel de esa cuenta,
+    # tenga o no historia, sin pausas ni otras cuentas.
+    solo = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--solo=")), "")
+    if solo:
+        ult = [p for p in pubs if p.get("nicho") == solo and p.get("ig_media_id")]
+        pend = [max(ult, key=lambda p: str(p.get("ts", "")))] if ult else []
     log(f"pendientes: {len(pend)}")
     for p in pend:
         log("  ·", p["nicho"], p["id"], p["ts"])
