@@ -157,6 +157,9 @@ def _lista_cuentas():
     el primer usuario es la cuenta activa."""
     for i in range(25):
         ns = nodos()
+        if buscar(DESAFIO, ns):
+            resolver_desafio("la cuenta activa")
+            continue
         if cerrar_carteles(ns):
             continue
         tab = next((n for n in ns if n["desc"] in ("Profile", "Perfil")), None)
@@ -191,6 +194,55 @@ def _lista_cuentas():
     raise SystemExit("no pude abrir la lista de cuentas de Instagram")
 
 
+DESAFIO = r"Check your email|Enter the code|Revisa tu correo|Ingresa el c[oó]digo|Introduce el c[oó]digo"
+
+
+def _codigo_r2():
+    """El código que Tomix cargó con el workflow "Código de Instagram" (R2
+    historias/codigo.json, por la puerta de GitHub). None si no hay."""
+    import json, urllib.request
+    base = os.environ.get("PUERTA_R2_URL", "").strip().rstrip("/")
+    if not base:
+        return None
+    req = urllib.request.Request(f"{base}/o/historias/codigo.json")
+    req.add_header("x-clave", os.environ.get("PUERTA_R2_KEY", "").strip())
+    req.add_header("user-agent", "eugenia-historias/1.0")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def resolver_desafio(usuario, minutos=20):
+    """21/11 (Tomix: "todo independiente de mi PC"): Instagram a veces pide un código por
+    mail al entrar desde GitHub. El código lo carga Tomix (workflow "Código de Instagram",
+    desde el celular o la notebook) y acá se espera hasta `minutos` y se escribe. True si
+    pasó; al terminar, el workflow guarda la copia validada del emulador en la nube."""
+    if not buscar(DESAFIO):
+        return False
+    desde = time.time()
+    print(f"Instagram pide un código para {usuario}: esperando que lo cargues en "
+          f"GitHub > Actions > Código de Instagram (hasta {minutos} min)", flush=True)
+    while time.time() - desde < minutos * 60:
+        c = _codigo_r2() or {}
+        if str(c.get("codigo", "")).isdigit() and float(c.get("t", 0)) >= desde - 600:
+            campo = next((n for n in nodos() if n["edit"]), None)
+            if campo:
+                tocar(campo); time.sleep(1)
+            adb("shell", "input", "text", str(c["codigo"])); time.sleep(1)
+            tocar_texto(r"^(Continue|Continuar|Confirm|Confirmar|Next|Siguiente)$", 5)
+            time.sleep(10)
+            if not buscar(DESAFIO):
+                Path("guardar_avd").write_text("1")
+                print(f"código aceptado: {usuario} validada", flush=True)
+                return True
+            print("Instagram no aceptó el código; espero otro", flush=True)
+            desde = time.time()
+        time.sleep(20)
+    raise SystemExit(f"Instagram pide un código para {usuario} y no llegó a tiempo")
+
+
 def cambiar_cuenta(usuario):
     """Pasa a la cuenta pedida. Las 4 cuentas están abiertas en la app del emulador
     (Tomix, 14/11). Si Instagram pide la contraseña, se corta: la pone Tomix."""
@@ -218,6 +270,8 @@ def cambiar_cuenta(usuario):
         if not destino:
             break
         tocar(destino); time.sleep(6)
+    if resolver_desafio(usuario):
+        time.sleep(5)
     if buscar(r"^(Password|Contraseña)$"):
         raise SystemExit(f"Instagram pide la contraseña de {usuario}: hay que entrar a mano")
     us, ns = _lista_cuentas()

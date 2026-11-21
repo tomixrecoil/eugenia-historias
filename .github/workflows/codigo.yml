@@ -1,0 +1,55 @@
+name: Código de Instagram
+# 21/11 (Tomix: "todo tiene que ser independiente de mi PC"). Cuando Instagram pide un
+# código por mail al emulador de la nube, la corrida de historias espera hasta 20 min.
+# Desde el celular o la notebook: Actions > Código de Instagram > Run workflow > pegar el
+# código del mail. Vacío = reintentar ya (saca la pausa y arranca las historias; va a
+# llegar un mail nuevo con otro código, y ese se carga acá de nuevo).
+on:
+  workflow_dispatch:
+    inputs:
+      codigo:
+        description: "Código de 6 números del mail de Instagram (vacío = reintentar ahora)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  codigo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guardar el código (no queda en el registro)
+        env:
+          CODIGO: ${{ inputs.codigo }}
+          PUERTA_R2_URL: ${{ secrets.PUERTA_R2_URL }}
+          PUERTA_R2_KEY: ${{ secrets.PUERTA_R2_KEY }}
+        run: |
+          [ -n "$CODIGO" ] && echo "::add-mask::$CODIGO"
+          c=$(echo "$CODIGO" | tr -dc '0-9')
+          [ -z "$c" ] && { echo "sin código: solo reintento"; exit 0; }
+          printf '{"codigo":"%s","t":%s}' "$c" "$(date +%s)" > c.json
+          curl -sf -X PUT -H "x-clave: $PUERTA_R2_KEY" -H "user-agent: eugenia-historias/1.0" \
+            --data-binary @c.json "${PUERTA_R2_URL%/}/o/historias/codigo.json" && echo "código guardado"
+          rm -f c.json
+
+      - uses: actions/checkout@v4
+
+      - name: Sacar la pausa y arrancar las historias
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'P'
+          import json
+          e = json.load(open("estado.json", encoding="utf-8"))
+          e["pausa_hasta"] = {}
+          json.dump(e, open("estado.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+          P
+          git config user.name "eugenia-historias"
+          git config user.email "eugenia-historias@users.noreply.github.com"
+          git add estado.json
+          git diff --cached --quiet || (git commit -q -m "código de Instagram: sin pausa" && git push -q)
+          # Si ya hay una corrida esperando el código, la usa; si no, arranca una.
+          n=$(gh run list -w historias.yml --status in_progress --json databaseId -q length)
+          [ "$n" = "0" ] && gh workflow run historias.yml || echo "ya hay una corrida en curso: usa el código"

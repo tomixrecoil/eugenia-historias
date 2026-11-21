@@ -138,6 +138,30 @@ jobs:
         if: steps.pend.outputs.n != '0'
         run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }}
 
+      - name: Guardar el emulador validado en la nube
+        # 21/11: si en esta corrida se cargó un código de Instagram, la copia del emulador
+        # queda validada y se sube al release, así no lo vuelve a pedir (sin la PC).
+        if: always() && hashFiles('guardar_avd') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EMU_CLAVE: ${{ secrets.EMU_CLAVE }}
+        run: |
+          set -e
+          adb emu kill || true
+          sleep 20; pkill -f qemu-system || true; sleep 5
+          D=/mnt/avd/eugenia_ig.avd; O=/mnt/avd/nuevo; mkdir -p $O
+          Q=$ANDROID_SDK_ROOT/emulator/qemu-img
+          ls -la $D
+          src=$D/userdata-qemu.img; [ -f $D/userdata-qemu.img.qcow2 ] && src=$D/userdata-qemu.img.qcow2
+          $Q convert -c -O qcow2 $src $O/userdata-qemu.img
+          $Q check $O/userdata-qemu.img
+          cd $O && split -b 1992294400 -d -a 1 userdata-qemu.img userdata.part && rm userdata-qemu.img
+          for f in userdata.part?; do openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in $f -out $f.enc; rm $f; done
+          for a in $(gh release view avd-cifrado -R ${{ github.repository }} --json assets -q '.assets[].name' | grep '^userdata.part'); do
+            [ -f "$a" ] || gh release delete-asset avd-cifrado "$a" -R ${{ github.repository }} -y; done
+          gh release upload avd-cifrado -R ${{ github.repository }} --clobber userdata.part?.enc
+          echo "copia validada subida"
+
       - name: Guardar lo hecho
         if: always()
         run: |

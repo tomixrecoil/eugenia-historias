@@ -177,7 +177,8 @@ def main():
     pend = [p for p in pubs
             if p.get("nicho") in CUENTAS and p.get("id") and p["id"] not in hechas
             and str(p.get("ts", "")) >= max(est["desde"], limite)
-            and p.get("ig_media_id") and p.get("nicho") not in est.get("pausadas", [])]
+            and p.get("ig_media_id") and p.get("nicho") not in est.get("pausadas", [])
+            and est.get("pausa_hasta", {}).get(p.get("nicho"), "") < ahora.isoformat()]
     # "pausadas" (estado.json): cuentas que hoy no están abiertas en el Instagram del emulador
     # (21/11: hidroponía, desconectada por el baneo). Intentar entrar a una cuenta cerrada
     # trababa el emulador y tiraba las historias de las otras cuentas.
@@ -246,9 +247,11 @@ def main():
             # entrar desde GitHub). Insistir puede terminar en cuenta restringida (le pasó a
             # terrarios): esa cuenta queda en pausa hasta que Tomix la valide en el emulador.
             try:
-                if he.buscar(r"Check your email|Enter the code|Revisa tu correo|Ingresa el c[oó]digo"):
-                    est.setdefault("pausadas", []).append(n)
-                    log(f"Instagram pide un código de seguridad en {n}: la cuenta queda en pausa")
+                if "código" in str(e) or he.buscar(he.DESAFIO):
+                    # No llegó el código a tiempo: 6 h de pausa para no pedirle a Instagram
+                    # un código tras otro (el workflow "Código de Instagram" la reactiva).
+                    est.setdefault("pausa_hasta", {})[n] = (datetime.now(timezone.utc) + timedelta(hours=6)).isoformat()
+                    log(f"Instagram pide un código de seguridad en {n}: 6 h en pausa o hasta que cargues el código")
             except Exception:  # noqa: BLE001
                 pass
             with open(ROOT / f"falla_{rid}.png", "wb") as f:
