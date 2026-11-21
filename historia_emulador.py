@@ -25,7 +25,13 @@ BASE = "https://conocimientosdigital.pages.dev/"
 
 
 def adb(*a, salida=True):
-    r = subprocess.run([ADB, "-s", "emulator-5554", *a], capture_output=True, text=True, encoding="utf-8", errors="ignore")
+    # 21/11: sin tope, un "uiautomator dump" colgado dejó la corrida 25 min quieta.
+    try:
+        r = subprocess.run([ADB, "-s", "emulator-5554", *a], capture_output=True, text=True,
+                           encoding="utf-8", errors="ignore", timeout=90)
+    except subprocess.TimeoutExpired:
+        print("adb no respondió en 90 s:", " ".join(a)[:80], flush=True)
+        return "" if salida else 1
     return r.stdout if salida else r.returncode
 
 
