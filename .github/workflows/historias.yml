@@ -110,7 +110,7 @@ jobs:
           chmod 600 ~/.android/adbkey
           adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -feature -Vulkan,-HardwareDecoder -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
