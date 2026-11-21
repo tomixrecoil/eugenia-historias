@@ -103,6 +103,47 @@ def ajustar_duracion(src, dst):
     return dst
 
 
+def emulador_vivo():
+    r = subprocess.run(["adb", "-s", "emulator-5554", "shell", "getprop", "sys.boot_completed"],
+                       capture_output=True, text=True, timeout=30)
+    return r.stdout.strip() == "1"
+
+
+def asegurar_emulador():
+    """21/11: en GitHub el emulador a veces se cierra solo (error de gráficos de Instagram,
+    sin falta de memoria) y se perdían las historias que quedaban. Si está caído, se
+    vuelve a prender acá mismo y se sigue con la próxima."""
+    try:
+        if emulador_vivo():
+            return
+    except Exception:  # noqa: BLE001
+        pass
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return
+    log("el emulador está caído: lo vuelvo a prender")
+    subprocess.run(["pkill", "-f", "qemu-system"], capture_output=True)
+    time.sleep(5)
+    subprocess.Popen("nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot "
+                     "-gpu swiftshader_indirect -memory 4096 -cores 4 -accel on >> emulador.log 2>&1 &",
+                     shell=True)
+    for _ in range(60):
+        time.sleep(10)
+        try:
+            if emulador_vivo():
+                break
+        except Exception:  # noqa: BLE001
+            pass
+    else:
+        log("no volvió a prender")
+        return
+    time.sleep(20)
+    for c in (["shell", "input", "keyevent", "82"],
+              ["shell", "ime", "enable", "com.android.adbkeyboard/.AdbIME"],
+              ["shell", "ime", "set", "com.android.adbkeyboard/.AdbIME"]):
+        subprocess.run(["adb", "-s", "emulator-5554", *c], capture_output=True, timeout=60)
+    log("emulador prendido de nuevo")
+
+
 def texto_boton(p, est) -> str:
     """El texto del sticker (textos_boton.py): no siempre "VER CURSO". Se guardan los
     últimos de cada nicho en estado.json para no repetirlos."""
@@ -176,6 +217,7 @@ def main():
     for p in pend:
         n, rid = p["nicho"], p["id"]
         tmp = Path(tempfile.mkdtemp())
+        asegurar_emulador()
         try:
             bajar_reel(p, tmp / "reel.mp4")
             video = ajustar_duracion(tmp / "reel.mp4", tmp / "reel_59.mp4")
