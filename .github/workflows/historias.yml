@@ -17,6 +17,10 @@ on:
         description: "Solo esta cuenta (hidroponia, bonsai, terrarios, herbologia): su último reel, ya"
         type: string
         default: ""
+      gpu:
+        description: "Gráficos del emulador (swiftshader_indirect o guest, más estable)"
+        type: string
+        default: ""
       modo:
         description: "todas = último reel de cada cuenta, tenga o no historia; sin-publicar = prueba de 1 cuenta sin publicar"
         type: choice
@@ -34,6 +38,7 @@ jobs:
     permissions:
       contents: write
     env:
+      EMU_GPU: ${{ inputs.gpu }}
       PUERTA_R2_URL: ${{ secrets.PUERTA_R2_URL }}
       PUERTA_R2_KEY: ${{ secrets.PUERTA_R2_KEY }}
       META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
@@ -115,7 +120,7 @@ jobs:
           chmod 600 ~/.android/adbkey
           adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-swiftshader_indirect} -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
