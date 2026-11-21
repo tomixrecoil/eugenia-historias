@@ -265,9 +265,9 @@ def main():
             try:
                 if "código" in str(e) or he.buscar(he.DESAFIO):
                     # No llegó el código a tiempo: 6 h de pausa para no pedirle a Instagram
-                    # un código tras otro (el workflow "Código de Instagram" la reactiva).
+                    # aprobaciones una tras otra.
                     est.setdefault("pausa_hasta", {})[n] = (datetime.now(timezone.utc) + timedelta(hours=6)).isoformat()
-                    log(f"Instagram pide un código de seguridad en {n}: 6 h en pausa o hasta que cargues el código")
+                    log(f"Instagram pidió aprobar el ingreso en {n} y no se aprobó: 6 h en pausa")
             except Exception:  # noqa: BLE001
                 pass
             with open(ROOT / f"falla_{rid}.png", "wb") as f:

@@ -219,84 +219,27 @@ OTRA_FORMA = r"^(Try another way|Probar otra forma|Intentar de otra manera|Otra 
 APROBAR_PUSH = r"another device|otro dispositivo|notification|notificaci[oó]n|Approve|Aprobar"
 
 
-def _codigo_r2():
-    """El código que Tomix cargó con el workflow "Código de Instagram" (R2
-    historias/codigo.json, por la puerta de GitHub). None si no hay."""
-    import json, urllib.request
-    base = os.environ.get("PUERTA_R2_URL", "").strip().rstrip("/")
-    if not base:
-        return None
-    req = urllib.request.Request(f"{base}/o/historias/codigo.json")
-    req.add_header("x-clave", os.environ.get("PUERTA_R2_KEY", "").strip())
-    req.add_header("user-agent", "eugenia-historias/1.0")
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def _avisar(texto):
-    """WhatsApp a Tomix por el Worker (/aviso). 21/11: "si necesita auth, mandame notif"."""
-    import json, urllib.request
-    k = os.environ.get("AVISO_KEY", "").strip()
-    if not k:
-        return
-    try:
-        req = urllib.request.Request(
-            f"https://marketing-ig-scheduler.goldentimeshift.workers.dev/aviso?key={k}",
-            data=json.dumps({"texto": texto}).encode(), method="POST",
-            headers={"content-type": "application/json", "user-agent": "eugenia-historias/1.0"})
-        urllib.request.urlopen(req, timeout=30).read()
-    except Exception as e:  # noqa: BLE001
-        print("no pude avisar por WhatsApp:", str(e)[:100], flush=True)
-
-
 def resolver_desafio(usuario, minutos=20):
-    """21/11 (Tomix: "todo independiente de mi PC"): Instagram a veces pide un código por
-    mail al entrar desde GitHub. El código lo carga Tomix (workflow "Código de Instagram",
-    desde el celular o la notebook) y acá se espera hasta `minutos` y se escribe. True si
-    pasó; al terminar, el workflow guarda la copia validada del emulador en la nube."""
+    """21/11 (Tomix: "que me mande aprobar al celular con push"). Instagram a veces pide
+    verificar el ingreso desde GitHub: se elige "aprobar desde otro dispositivo", Tomix toca
+    Aprobar en la notificación de su celular y acá se espera hasta `minutos`. Al pasar, el
+    workflow guarda el emulador ya aprobado."""
     if not buscar(DESAFIO):
         return False
-    desde = time.time()
-    push = False
     if tocar_texto(OTRA_FORMA, 5):
         time.sleep(4)
         if tocar_texto(APROBAR_PUSH, 5):
             time.sleep(2)
             tocar_texto(r"^(Continue|Continuar|Send|Enviar|Next|Siguiente)$", 4)
-            push = True
-    if push:
-        _avisar(f"🔐 Historias: Instagram pide aprobar el ingreso de {usuario}. Tocá APROBAR "
-                f"en la notificación de Instagram en tu celular (20 min).")
-    else:
-        _avisar(f"🔐 Historias: Instagram pide un código para {usuario}. Te llegó por mail. "
-                f"Cargalo en los próximos 20 min: GitHub (app o web) > tomixrecoil/eugenia-historias > "
-                f"Actions > Código de Instagram > Run workflow > pegá el código.")
-    print(f"Instagram pide un código para {usuario}: esperando que lo cargues en "
-          f"GitHub > Actions > Código de Instagram (hasta {minutos} min)", flush=True)
+    print(f"Instagram pide aprobar el ingreso de {usuario}: esperando la aprobación en el celular", flush=True)
+    desde = time.time()
     while time.time() - desde < minutos * 60:
+        time.sleep(15)
         if not buscar(DESAFIO):
             Path("guardar_avd").write_text("1")
             print(f"ingreso aprobado: {usuario}", flush=True)
             return True
-        c = _codigo_r2() or {}
-        if str(c.get("codigo", "")).isdigit() and float(c.get("t", 0)) >= desde - 600:
-            campo = next((n for n in nodos() if n["edit"]), None)
-            if campo:
-                tocar(campo); time.sleep(1)
-            adb("shell", "input", "text", str(c["codigo"])); time.sleep(1)
-            tocar_texto(r"^(Continue|Continuar|Confirm|Confirmar|Next|Siguiente)$", 5)
-            time.sleep(10)
-            if not buscar(DESAFIO):
-                Path("guardar_avd").write_text("1")
-                print(f"código aceptado: {usuario} validada", flush=True)
-                return True
-            print("Instagram no aceptó el código; espero otro", flush=True)
-            desde = time.time()
-        time.sleep(20)
-    raise SystemExit(f"Instagram pide un código para {usuario} y no llegó a tiempo")
+    raise SystemExit(f"Instagram pide aprobar el ingreso de {usuario} y no se aprobó en {minutos} min (código)")
 
 
 def cambiar_cuenta(usuario):
