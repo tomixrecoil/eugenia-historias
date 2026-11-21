@@ -230,6 +230,22 @@ def _codigo_r2():
         return None
 
 
+def _avisar(texto):
+    """WhatsApp a Tomix por el Worker (/aviso). 21/11: "si necesita auth, mandame notif"."""
+    import json, urllib.request
+    k = os.environ.get("AVISO_KEY", "").strip()
+    if not k:
+        return
+    try:
+        req = urllib.request.Request(
+            f"https://marketing-ig-scheduler.goldentimeshift.workers.dev/aviso?key={k}",
+            data=json.dumps({"texto": texto}).encode(), method="POST",
+            headers={"content-type": "application/json", "user-agent": "eugenia-historias/1.0"})
+        urllib.request.urlopen(req, timeout=30).read()
+    except Exception as e:  # noqa: BLE001
+        print("no pude avisar por WhatsApp:", str(e)[:100], flush=True)
+
+
 def resolver_desafio(usuario, minutos=20):
     """21/11 (Tomix: "todo independiente de mi PC"): Instagram a veces pide un código por
     mail al entrar desde GitHub. El código lo carga Tomix (workflow "Código de Instagram",
@@ -238,6 +254,9 @@ def resolver_desafio(usuario, minutos=20):
     if not buscar(DESAFIO):
         return False
     desde = time.time()
+    _avisar(f"🔐 Historias: Instagram pide un código para {usuario}. Te llegó por mail. "
+            f"Cargalo en los próximos 20 min: GitHub (app o web) > tomixrecoil/eugenia-historias > "
+            f"Actions > Código de Instagram > Run workflow > pegá el código.")
     print(f"Instagram pide un código para {usuario}: esperando que lo cargues en "
           f"GitHub > Actions > Código de Instagram (hasta {minutos} min)", flush=True)
     while time.time() - desde < minutos * 60:
