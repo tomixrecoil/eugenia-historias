@@ -136,7 +136,10 @@ def main():
     pend = [p for p in pubs
             if p.get("nicho") in CUENTAS and p.get("id") and p["id"] not in hechas
             and str(p.get("ts", "")) >= max(est["desde"], limite)
-            and p.get("ig_media_id")]
+            and p.get("ig_media_id") and p.get("nicho") not in est.get("pausadas", [])]
+    # "pausadas" (estado.json): cuentas que hoy no están abiertas en el Instagram del emulador
+    # (21/11: hidroponía, desconectada por el baneo). Intentar entrar a una cuenta cerrada
+    # trababa el emulador y tiraba las historias de las otras cuentas.
     # 20/11 (Tomix: "reintentemos después de 3, elimina esa regla"): ya no hay tope de intentos.
     # Se reintenta en cada corrida mientras el reel tenga menos de MAX_HORAS (el conteo de
     # fallas queda solo como registro).
