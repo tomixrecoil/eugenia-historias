@@ -220,7 +220,29 @@ def main():
         return 0
 
     import historia_emulador as he
+    # 21/11: la PRIMERA cuenta de cada corrida fallaba siempre (hidro, o bonsái cuando hidro
+    # estaba en pausa): recién prendido, Instagram reproduce los videos del inicio, la pantalla
+    # no se puede leer y a veces el emulador se cae. Calentamiento: abrir Instagram, esperar,
+    # ir al perfil (sin videos) y recién ahí empezar.
+    try:
+        he.adb("shell", "monkey", "-p", "com.instagram.android", "-c", "android.intent.category.LAUNCHER", "1")
+        time.sleep(45)
+        tab = next((n for n in he.nodos() if n["desc"] in ("Profile", "Perfil")), None)
+        if tab:
+            he.tocar(tab)
+        time.sleep(15)
+        he.adb("shell", "am", "force-stop", "com.instagram.android")
+        log("calentamiento hecho")
+    except Exception as e:  # noqa: BLE001
+        log("calentamiento falló:", str(e)[:100])
+    # Y la que falla se reintenta una vez al final de la misma corrida.
+    pend = pend + [None] + list(pend)
     for p in pend:
+        if p is None:
+            log("segunda vuelta para las que fallaron")
+            continue
+        if p["id"] in hechas:
+            continue
         n, rid = p["nicho"], p["id"]
         tmp = Path(tempfile.mkdtemp())
         asegurar_emulador()
