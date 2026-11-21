@@ -252,6 +252,9 @@ def main():
                     raise RuntimeError("Instagram no muestra la historia nueva después de 10 min")
                 time.sleep(120)       # que termine de subir antes de seguir
             hechas[rid] = datetime.now(timezone.utc).isoformat()
+            # 21/11 (Tomix: "que recuerde el celular"): si subió al menos una, al terminar se
+            # guarda el emulador tal como quedó (sesiones al día) y la próxima arranca de acá.
+            Path("guardar_avd").write_text("1")
             log(f"historia subida y vista en Instagram: {n} {rid}")
         except (Exception, SystemExit) as e:   # noqa: BLE001
             fallas[rid] = fallas.get(rid, 0) + 1
