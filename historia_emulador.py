@@ -210,7 +210,13 @@ def _lista_cuentas():
     raise SystemExit("no pude abrir la lista de cuentas de Instagram")
 
 
-DESAFIO = r"Check your email|Enter the code|Revisa tu correo|Ingresa el c[oó]digo|Introduce el c[oó]digo"
+DESAFIO = (r"Check your email|Enter the code|Revisa tu correo|Ingresa el c[oó]digo|Introduce el c[oó]digo"
+           r"|another device|otro dispositivo|Waiting for approval|Esperando (la )?aprobaci[oó]n"
+           r"|Check your notifications|Revisa tus notificaciones")
+# 21/11 (Tomix: "que me mande aprobar al celular con push"): en vez del código por mail,
+# se elige aprobar desde otro dispositivo; Tomix toca "Aprobar" en su celular.
+OTRA_FORMA = r"^(Try another way|Probar otra forma|Intentar de otra manera|Otra opci[oó]n)$"
+APROBAR_PUSH = r"another device|otro dispositivo|notification|notificaci[oó]n|Approve|Aprobar"
 
 
 def _codigo_r2():
@@ -254,12 +260,27 @@ def resolver_desafio(usuario, minutos=20):
     if not buscar(DESAFIO):
         return False
     desde = time.time()
-    _avisar(f"🔐 Historias: Instagram pide un código para {usuario}. Te llegó por mail. "
-            f"Cargalo en los próximos 20 min: GitHub (app o web) > tomixrecoil/eugenia-historias > "
-            f"Actions > Código de Instagram > Run workflow > pegá el código.")
+    push = False
+    if tocar_texto(OTRA_FORMA, 5):
+        time.sleep(4)
+        if tocar_texto(APROBAR_PUSH, 5):
+            time.sleep(2)
+            tocar_texto(r"^(Continue|Continuar|Send|Enviar|Next|Siguiente)$", 4)
+            push = True
+    if push:
+        _avisar(f"🔐 Historias: Instagram pide aprobar el ingreso de {usuario}. Tocá APROBAR "
+                f"en la notificación de Instagram en tu celular (20 min).")
+    else:
+        _avisar(f"🔐 Historias: Instagram pide un código para {usuario}. Te llegó por mail. "
+                f"Cargalo en los próximos 20 min: GitHub (app o web) > tomixrecoil/eugenia-historias > "
+                f"Actions > Código de Instagram > Run workflow > pegá el código.")
     print(f"Instagram pide un código para {usuario}: esperando que lo cargues en "
           f"GitHub > Actions > Código de Instagram (hasta {minutos} min)", flush=True)
     while time.time() - desde < minutos * 60:
+        if not buscar(DESAFIO):
+            Path("guardar_avd").write_text("1")
+            print(f"ingreso aprobado: {usuario}", flush=True)
+            return True
         c = _codigo_r2() or {}
         if str(c.get("codigo", "")).isdigit() and float(c.get("t", 0)) >= desde - 600:
             campo = next((n for n in nodos() if n["edit"]), None)
