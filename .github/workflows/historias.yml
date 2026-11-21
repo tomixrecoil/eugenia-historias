@@ -88,7 +88,8 @@ jobs:
           D=/mnt/avd/eugenia_ig.avd; mkdir -p $D /mnt/avd/dl
           gh release download avd-cifrado -R ${{ github.repository }} -D /mnt/avd/dl
           des() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:EMU_CLAVE -in "$1"; }
-          { des /mnt/avd/dl/userdata.part0.enc; des /mnt/avd/dl/userdata.part1.enc; des /mnt/avd/dl/userdata.part2.enc; } > $D/userdata-qemu.img
+          # Todas las partes, en orden (21/11: la imagen creció a 4 partes y se usaban solo 3)
+          for f in $(ls /mnt/avd/dl/userdata.part*.enc | sort); do des $f; done > $D/userdata-qemu.img
           rm -f /mnt/avd/dl/userdata.part*
           des /mnt/avd/dl/avd-chico.tgz.enc | tar -xz -C $D
           sed -i 's#\\#/#g' $D/config.ini
