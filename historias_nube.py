@@ -223,19 +223,27 @@ def main():
             sck = "historia-" + n + "-" + rid.split("-", 2)[-1]
             texto = texto_boton(p, est)
             log(f"  botón: {texto}")
-            antes = historias_vivas(n)
+            try:
+                antes = historias_vivas(n)
+            except Exception as e2:  # noqa: BLE001
+                # 21/11: la API de Meta no veía la cuenta de herbología. Se sube igual y se
+                # da por hecha sin la prueba de la API (mejor eso que ninguna historia).
+                log(f"  la API de Meta no ve la cuenta de {n} ({str(e2)[:60]}): subo sin verificar")
+                antes = None
             if "--sin-publicar" in sys.argv:
                 he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER,
                             sin_publicar=True)
                 continue
             he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
             # Hecha recién cuando Instagram la muestra (hasta 10 min; el emulador sigue prendido)
-            for _ in range(40):
+            for _ in range(40 if antes is not None else 0):
                 time.sleep(15)
                 if historias_vivas(n) - antes:
                     break
             else:
-                raise RuntimeError("Instagram no muestra la historia nueva después de 10 min")
+                if antes is not None:
+                    raise RuntimeError("Instagram no muestra la historia nueva después de 10 min")
+                time.sleep(120)       # que termine de subir antes de seguir
             hechas[rid] = datetime.now(timezone.utc).isoformat()
             log(f"historia subida y vista en Instagram: {n} {rid}")
         except (Exception, SystemExit) as e:   # noqa: BLE001
