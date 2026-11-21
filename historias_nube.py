@@ -242,6 +242,15 @@ def main():
         except (Exception, SystemExit) as e:   # noqa: BLE001
             fallas[rid] = fallas.get(rid, 0) + 1
             log(f"falló {n} {rid} (intento {fallas[rid]}): {str(e)[:200]}")
+            # 21/11: Instagram pidió un código por mail a herbología (control de seguridad por
+            # entrar desde GitHub). Insistir puede terminar en cuenta restringida (le pasó a
+            # terrarios): esa cuenta queda en pausa hasta que Tomix la valide en el emulador.
+            try:
+                if he.buscar(r"Check your email|Enter the code|Revisa tu correo|Ingresa el c[oó]digo"):
+                    est.setdefault("pausadas", []).append(n)
+                    log(f"Instagram pide un código de seguridad en {n}: la cuenta queda en pausa")
+            except Exception:  # noqa: BLE001
+                pass
             with open(ROOT / f"falla_{rid}.png", "wb") as f:
                 subprocess.run([he.ADB, "-s", "emulator-5554", "exec-out", "screencap", "-p"], stdout=f)
             he.adb("shell", "input", "keyevent", "4")
