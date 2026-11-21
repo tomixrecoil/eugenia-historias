@@ -28,9 +28,9 @@
   "stk-hidro-047393": 8,
   "stk-bonsa-524512": 9,
   "stk-herbo-856160": 3,
-  "stk-hidro-101462": 10,
+  "stk-hidro-101462": 12,
   "stk-bonsa-556678": 4,
-  "stk-herbo-472982": 6,
+  "stk-herbo-472982": 8,
   "stk-terra-007621-m": 1
  },
  "textos": {
@@ -58,8 +58,6 @@
    "💥 60% DE DESCUENTO | ENTRA YA"
   ],
   "hidroponia": [
-   "🎓 60% OFF | ENTRA YA",
-   "🎓 60% OFF | ENTRA AHORA",
    "🎓 60% OFF | ENTRA AHORA",
    "🎓 60% OFF HOY | ENTRA AHORA",
    "60% OFF HOY | ENTRA YA",
@@ -72,11 +70,11 @@
    "🌐 60% OFF ESTA SEMANA | ENTRA",
    "🌐 60% OFF | ENTRA AHORA",
    "🌐 60% OFF HOY | HAZ CLICK",
-   "🌐 60% OFF | ENTRA AHORA"
+   "🌐 60% OFF | ENTRA AHORA",
+   "🌐 60% OFF | ENTRA AHORA",
+   "🌐 60% DE DESCUENTO | ENTRA YA"
   ],
   "herbologia": [
-   "🔗 60% OFF | ENTRA AHORA",
-   "60% OFF HOY | HAZ CLICK 👉",
    "🌐 60% OFF HOY | ENTRA YA",
    "⏳ TOCA MAS INFORMACION",
    "🎓 60% OFF + BONOS | ENTRA YA",
@@ -89,7 +87,9 @@
    "OBTEN TUS BONOS | HAZ CLICK",
    "TOCA MAS INFORMACION",
    "💥 60% OFF HOY | ENTRA YA",
-   "⏳ 60% OFF HOY | HAZ CLICK"
+   "⏳ 60% OFF HOY | HAZ CLICK",
+   "🎓 OFERTA EXCLUSIVA | ENTRA YA",
+   "🎓 HERBOLOGÍA 60% OFF | ENTRA YA"
   ]
  },
  "pausadas": [],
