@@ -54,8 +54,10 @@ def nodos():
         if not b:
             continue
         t, dsc = re.search(r' text="([^"]*)"', s), re.search(r'content-desc="([^"]*)"', s)
+        pk = re.search(r' package="([^"]*)"', s)
         out.append({"text": t.group(1) if t else "", "desc": dsc.group(1) if dsc else "",
-                    "edit": "EditText" in s, "b": tuple(map(int, b.groups()))})
+                    "edit": "EditText" in s, "b": tuple(map(int, b.groups())),
+                    "pkg": pk.group(1) if pk else ""})
     return out
 
 
@@ -158,7 +160,20 @@ def _lista_cuentas():
         if cerrar_carteles(ns):
             continue
         tab = next((n for n in ns if n["desc"] in ("Profile", "Perfil")), None)
+        # 21/11 (hidroponía en GitHub): Instagram abría un reel a pantalla completa y con
+        # "atrás" se salía de la app; la barra de abajo no volvía nunca. Si la app no está
+        # al frente o no aparece la barra después de varios intentos, se reabre de cero.
+        afuera = ns and not any(n.get("pkg") == "com.instagram.android" for n in ns)
+        if not tab and (afuera or i in (8, 16)):
+            adb("shell", "am", "force-stop", "com.instagram.android"); time.sleep(1)
+            adb("shell", "monkey", "-p", "com.instagram.android", "-c", "android.intent.category.LAUNCHER", "1")
+            time.sleep(8)
+            continue
         if not tab and i % 2 == 1:
+            atras = next((n for n in ns if n["desc"] in ("Back", "Atrás")), None)
+            if atras:
+                tocar(atras); time.sleep(1.5)
+                continue
             # A veces abre directo un reel a pantalla completa (sin la barra de abajo):
             # "atrás" hasta que aparezca la barra (19/11, en GitHub).
             adb("shell", "input", "keyevent", "4"); time.sleep(1.5)
