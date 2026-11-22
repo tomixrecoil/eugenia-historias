@@ -356,11 +356,39 @@ def publicar(nicho, archivo, texto="VER CURSO", sck="historia", cuenta="", y=0.0
             for _ in range(len(c0[0]["text"]) + 5):
                 adb("shell", "input", "keyevent", "KEYCODE_DEL")
             escribir(url); time.sleep(1)
-    tocar_texto(r"^(Customize sticker text|Personalizar texto del sticker)$")
-    time.sleep(1)
-    campos = [n for n in nodos() if n["edit"]]
-    if len(campos) > 1:
-        tocar(campos[1]); time.sleep(0.5); escribir(texto)
+    # 22/11 (Tomix: "no le escribiste nada al botón, le puso de título el link"): el texto
+    # no se revisaba. Ahora se abre el campo, se escribe, se lee lo que quedó y se reescribe
+    # hasta 3 veces. Si no queda, NO se publica (mejor reintentar que salir con el link).
+    def _norm(x):
+        return re.sub(r"\s+", " ", x or "").strip().upper()
+    quedo = False
+    for intento in range(3):
+        campos = [n for n in nodos() if n["edit"]]
+        if len(campos) < 2:
+            tocar_texto(r"^(Customize sticker text|Personalizar texto del sticker)$")
+            time.sleep(1.5)
+            campos = [n for n in nodos() if n["edit"]]
+        if len(campos) < 2:
+            continue
+        c1 = campos[1]
+        if _norm(c1["text"]) == _norm(texto):
+            quedo = True
+            break
+        tocar(c1); time.sleep(0.5)
+        if c1["text"]:
+            adb("shell", "input", "keyevent", "KEYCODE_MOVE_END")
+            for _ in range(len(c1["text"]) + 5):
+                adb("shell", "input", "keyevent", "KEYCODE_DEL")
+        teclado_adb(); escribir(texto); time.sleep(1.5)
+        c2 = [n for n in nodos() if n["edit"]]
+        if len(c2) > 1 and _norm(c2[1]["text"]) == _norm(texto):
+            quedo = True
+            break
+        print(f"el texto del botón no quedó (intento {intento + 1}): "
+              f"{(c2[1]['text'] if len(c2) > 1 else 'sin campo')!r}", flush=True)
+    if not quedo:
+        raise SystemExit("no pude escribir el texto del botón: no publico con el link de título")
+    print(f"texto del botón: {texto}", flush=True)
     if not tocar_texto(r"^(Done|Listo)$", 3):
         # con algunos videos el botón es un ✓ sin texto, arriba a la derecha de "Add link" (14/11)
         t = buscar(r"^(Add link|Agregar enlace)$")
