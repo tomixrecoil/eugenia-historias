@@ -150,6 +150,8 @@ def asegurar_emulador():
               ["shell", "ime", "enable", "com.android.adbkeyboard/.AdbIME"],
               ["shell", "ime", "set", "com.android.adbkeyboard/.AdbIME"]):
         subprocess.run(["adb", "-s", "emulator-5554", *c], capture_output=True, timeout=60)
+    subprocess.run(["adb", "-s", "emulator-5554", "shell", "pm", "disable-user", "--user", "0", "com.android.vending"],
+                   capture_output=True, timeout=60)
     log("emulador prendido de nuevo")
 
 
@@ -302,6 +304,12 @@ def main():
         except (Exception, SystemExit) as e:   # noqa: BLE001
             fallas[rid] = fallas.get(rid, 0) + 1
             log(f"falló {n} {rid} (intento {fallas[rid]}): {str(e)[:200]}")
+            try:
+                v = subprocess.run(["adb", "-s", "emulator-5554", "shell", "dumpsys", "package", "com.instagram.android"],
+                                   capture_output=True, text=True, timeout=30).stdout
+                log("  Instagram al fallar: " + next((l.strip() for l in v.splitlines() if "versionName" in l), "sin dato"))
+            except Exception:  # noqa: BLE001
+                pass
             # 21/11: Instagram pidió un código por mail a herbología (control de seguridad por
             # entrar desde GitHub). Insistir puede terminar en cuenta restringida (le pasó a
             # terrarios): esa cuenta queda en pausa hasta que Tomix la valide en el emulador.

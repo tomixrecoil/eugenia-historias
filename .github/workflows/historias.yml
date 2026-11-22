@@ -137,6 +137,11 @@ jobs:
           sleep 20
           adb shell input keyevent 82
           # Teclado ADB (github.com/senzhk/ADBKeyBoard, 18/11): emojis y tildes en el sticker
+          # 22/11: el Play Store podía actualizar Instagram al prender (el emulador se cae desde
+          # el 22/11 con mismo código, copia y máquina). Se apaga y se anota la versión.
+          adb shell pm disable-user --user 0 com.android.vending || true
+          echo "Instagram al prender: $(adb shell dumpsys package com.instagram.android | grep -m1 versionName)" | tee -a version_ig.txt
+          nohup sh -c 'while true; do adb logcat -v time >> logcat.txt 2>&1; sleep 5; done' >/dev/null 2>&1 &
           adb install -r apk/adbkeyboard.apk || true
           # Recién instalado tarda unos segundos en registrarse como teclado
           for i in $(seq 1 12); do
@@ -217,7 +222,8 @@ jobs:
             echo "==== procesos"; ps aux --sort=-%mem | head -8; free -m; } >> emulador.log 2>&1 || true
           cp /tmp/android-runner/emu-crash-*.db/*/*.dmp . 2>/dev/null || true
           ls -R /tmp/android-runner 2>/dev/null | tail -20 >> emulador.log || true
-          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
+          tail -c 30000000 logcat.txt > logcat_fin.txt 2>/dev/null || true
+          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp logcat_fin.txt version_ig.txt 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
           rm -f diag.tgz falla_*.png editor_*.png
 
