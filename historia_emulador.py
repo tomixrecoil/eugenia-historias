@@ -51,14 +51,8 @@ def prender():
 
 
 def nodos():
-    # Si la pantalla se mueve (video), el volcado falla: hasta 3 intentos.
-    for _ in range(3):
-        adb("shell", "rm", "-f", "/sdcard/ui.xml")
-        adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
-        x = adb("shell", "cat", "/sdcard/ui.xml")
-        if "<node" in (x or ""):
-            break
-        time.sleep(1.5)
+    adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
+    x = adb("shell", "cat", "/sdcard/ui.xml")
     out = []
     for n in re.finditer(r"<node [^>]*>", x):
         s = n.group(0)
@@ -196,10 +190,6 @@ def _lista_cuentas():
         if tab:
             a, b, c, d = tab["b"]
             x, y = (a + c) // 2, (b + d) // 2
-            # 21/11: con un video del inicio reproduciéndose atrás, Android no puede leer la
-            # pantalla (uiautomator no llega a "quieta") y la lista abierta no se veía.
-            # Primero al perfil (sin videos) y desde ahí la lista.
-            adb("shell", "input", "tap", str(x), str(y)); time.sleep(3)
             adb("shell", "input", "swipe", str(x), str(y), str(x), str(y), "1200")
             time.sleep(2.5)
             ns = nodos()
