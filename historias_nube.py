@@ -121,7 +121,7 @@ def asegurar_emulador():
     log("el emulador está caído: lo vuelvo a prender")
     subprocess.run(["pkill", "-f", "qemu-system"], capture_output=True)
     time.sleep(5)
-    gpu = os.environ.get("EMU_GPU") or "swiftshader_indirect"
+    gpu = os.environ.get("EMU_GPU") or "guest"   # 22/11: guest no se cae
     subprocess.Popen("nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot "
                      f"-gpu {gpu} -memory 4096 -cores 4 -accel on >> emulador.log 2>&1 &",
                      shell=True)
