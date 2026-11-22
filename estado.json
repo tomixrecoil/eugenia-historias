@@ -34,7 +34,7 @@
   "stk-herbo-472982": 10,
   "stk-terra-007621-m": 1,
   "stk-bonsa-822689": 1,
-  "stk-hidro-836955": 6
+  "stk-hidro-836955": 8
  },
  "textos": {
   "bonsai": [
@@ -61,8 +61,6 @@
    "💥 60% DE DESCUENTO | ENTRA YA"
   ],
   "hidroponia": [
-   "🌐 60% OFF | ENTRA YA",
-   "🌐 60% OFF ESTA SEMANA | ENTRA",
    "🌐 60% OFF | ENTRA AHORA",
    "🌐 60% OFF HOY | HAZ CLICK",
    "🌐 60% OFF | ENTRA AHORA",
@@ -75,6 +73,8 @@
    "🔗 60% DE DESCUENTO | ENTRA YA",
    "🔗 60% OFF HOY | ENTRA YA",
    "🔗 60% OFF HOY | ENTRA AHORA",
+   "🔗 60% OFF HOY | ENTRA AHORA",
+   "🔗 60% OFF HOY | ENTRA YA",
    "🔗 60% OFF HOY | ENTRA AHORA"
   ],
   "herbologia": [
