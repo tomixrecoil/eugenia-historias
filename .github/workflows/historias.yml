@@ -33,9 +33,7 @@ concurrency:
 
 jobs:
   historias:
-    # 22/11: con la imagen de ubuntu-latest (26.04, actualizada el 22/11) el emulador se cae
-    # al abrir Instagram con el mismo código y la misma copia que el 21/11 andaban.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 100
     permissions:
       contents: write
@@ -122,7 +120,7 @@ jobs:
           chmod 600 ~/.android/adbkey
           adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-swiftshader_indirect} -memory 4096 -cores 4 -accel on -feature -HardwareDecoder > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-swiftshader_indirect} -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
@@ -137,12 +135,6 @@ jobs:
           sleep 20
           adb shell input keyevent 82
           # Teclado ADB (github.com/senzhk/ADBKeyBoard, 18/11): emojis y tildes en el sticker
-          # 22/11: el Play Store podía actualizar Instagram al prender (el emulador se cae desde
-          # el 22/11 con mismo código, copia y máquina). Se apaga y se anota la versión.
-          adb shell pm disable-user --user 0 com.android.vending || true
-          echo "Instagram al prender: $(adb shell dumpsys package com.instagram.android | grep -m1 versionName)" | tee -a version_ig.txt
-          nohup sh -c 'while true; do adb logcat -v time >> logcat.txt 2>&1; sleep 5; done' >/dev/null 2>&1 &
-          mkdir -p fotos; nohup sh -c 'i=0; while true; do i=$((i+1)); adb exec-out screencap -p > fotos/f$(printf %05d $i).png 2>/dev/null; ls fotos | head -n -40 | sed s#^#fotos/# | xargs -r rm -f; sleep 2; done' >/dev/null 2>&1 &
           adb install -r apk/adbkeyboard.apk || true
           # Recién instalado tarda unos segundos en registrarse como teclado
           for i in $(seq 1 12); do
@@ -152,8 +144,6 @@ jobs:
           adb shell ime set com.android.adbkeyboard/.AdbIME || echo "aviso: sin teclado ADB, el botón sale sin emoji"
 
       - name: Historias
-        # 22/11: una corrida quedó colgada 1 h 30 y GitHub la cortó mientras guardaba el celular.
-        timeout-minutes: 45
         if: steps.pend.outputs.n != '0'
         run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} ${{ inputs.solo && format('--solo={0}', inputs.solo) || '' }}
 
@@ -161,9 +151,7 @@ jobs:
         # 21/11: si en esta corrida subió alguna historia o se cargó un código, la copia del
         # emulador se guarda tal como quedó: Instagram ve siempre el mismo celular (sin la PC).
         # Si la copia nueva no pasa el chequeo (qemu-img check), no se sube y queda la anterior.
-        # APAGADO 22/11: el 22/11 lo cortaron a mitad de la subida (ya había borrado la copia
-        # vieja) y el celular de la nube quedó roto. Vuelve cuando suba a un release aparte y
-        # cambie de copia recién con todas las partes arriba.
+        # APAGADO 22/11 (Tomix: "sin que recuerde el emulador"): rompió la copia de la nube.
         if: false
         env:
           GH_TOKEN: ${{ github.token }}
@@ -199,7 +187,7 @@ jobs:
           import json
           m = json.load(open("/tmp/mio.json", encoding="utf-8"))
           r = json.load(open("estado.json", encoding="utf-8"))
-          for k in ("hechas", "fallas", "textos", "pausa_hasta", "intentos"):
+          for k in ("hechas", "fallas", "textos", "pausa_hasta"):
               r.setdefault(k, {}).update(m.get(k, {}))
           r["desde"] = r.get("desde") or m.get("desde")
           json.dump(r, open("estado.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -223,8 +211,7 @@ jobs:
             echo "==== procesos"; ps aux --sort=-%mem | head -8; free -m; } >> emulador.log 2>&1 || true
           cp /tmp/android-runner/emu-crash-*.db/*/*.dmp . 2>/dev/null || true
           ls -R /tmp/android-runner 2>/dev/null | tail -20 >> emulador.log || true
-          tail -c 30000000 logcat.txt > logcat_fin.txt 2>/dev/null || true
-          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp logcat_fin.txt version_ig.txt 2>/dev/null) $(ls fotos/*.png 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
+          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
           rm -f diag.tgz falla_*.png editor_*.png
 

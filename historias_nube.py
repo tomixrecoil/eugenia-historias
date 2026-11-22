@@ -71,16 +71,6 @@ def bajar_reel(p, destino):
     urllib.request.urlretrieve(d["media_url"], destino)
 
 
-def ultima_historia(n):
-    """Hora UTC (YYYY-MM-DDTHH:MM:SS) de la historia más nueva que muestra la cuenta, o ''."""
-    tb = os.environ["META_PAGE_ACCESS_TOKEN"].strip()
-    tok = json.load(urllib.request.urlopen(
-        f"{GRAPH}/{CUENTAS[n][1]}?fields=access_token&access_token={tb}", timeout=60))["access_token"]
-    s = json.load(urllib.request.urlopen(
-        f"{GRAPH}/{IG_ID[n]}/stories?fields=timestamp&access_token={tok}", timeout=60))
-    return max((x["timestamp"][:19] for x in s.get("data", [])), default="")
-
-
 def historias_vivas(n):
     """Ids de las historias que Instagram muestra hoy en la cuenta (API de Meta). Es la
     prueba de que se subió: el 19/11 la última de cada corrida se perdía porque el
@@ -133,7 +123,7 @@ def asegurar_emulador():
     time.sleep(5)
     gpu = os.environ.get("EMU_GPU") or "swiftshader_indirect"
     subprocess.Popen("nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot "
-                     f"-gpu {gpu} -memory 4096 -cores 4 -accel on -feature -HardwareDecoder >> emulador.log 2>&1 &",
+                     f"-gpu {gpu} -memory 4096 -cores 4 -accel on >> emulador.log 2>&1 &",
                      shell=True)
     for _ in range(60):
         time.sleep(10)
@@ -150,8 +140,6 @@ def asegurar_emulador():
               ["shell", "ime", "enable", "com.android.adbkeyboard/.AdbIME"],
               ["shell", "ime", "set", "com.android.adbkeyboard/.AdbIME"]):
         subprocess.run(["adb", "-s", "emulator-5554", *c], capture_output=True, timeout=60)
-    subprocess.run(["adb", "-s", "emulator-5554", "shell", "pm", "disable-user", "--user", "0", "com.android.vending"],
-                   capture_output=True, timeout=60)
     log("emulador prendido de nuevo")
 
 
@@ -190,30 +178,6 @@ def main():
             and str(p.get("ts", "")) >= max(est["desde"], limite)
             and p.get("ig_media_id") and p.get("nicho") not in est.get("pausadas", [])
             and est.get("pausa_hasta", {}).get(p.get("nicho"), "") < ahora.isoformat()]
-    # 22/11 (Tomix: "la historia de su video más reciente"): por cuenta, solo el último reel.
-    # Antes se encolaban todos los de las últimas horas y uno viejo que no quedó anotado se
-    # subía dos veces (hidro 21/11 22:40 y 22/11 10:58) mientras el nuevo esperaba atrás.
-    ultimo = {}
-    for q in pubs:
-        if q.get("nicho") in CUENTAS and q.get("ig_media_id"):
-            if str(q.get("ts", "")) > str(ultimo.get(q["nicho"], {}).get("ts", "")):
-                ultimo[q["nicho"]] = q
-    pend = [q for q in pend if ultimo.get(q["nicho"], {}).get("id") == q["id"]]
-    # Y si Instagram ya muestra una historia de la cuenta publicada DESPUÉS de ese reel, está
-    # hecha (subió pero la corrida no llegó a anotarla): no se repite.
-    for q in list(pend):
-        try:
-            ts = ultima_historia(q["nicho"])
-        except Exception as e:  # noqa: BLE001
-            log(f"  no pude leer las historias de {q['nicho']}: {str(e)[:80]}")
-            continue
-        # Solo cuenta si la historia es posterior a un intento de subir ESTE reel (22/11: una
-        # historia repetida del reel anterior salió después del reel nuevo).
-        it = est.get("intentos", {}).get(q["nicho"], {})
-        if ts and it.get("rid") == q["id"] and ts >= it.get("t", "9")[:19]:
-            hechas[q["id"]] = ts
-            pend.remove(q)
-            log(f"  {q['nicho']} ya tiene la historia de su último reel ({ts}): no se repite")
     # "pausadas" (estado.json): cuentas que hoy no están abiertas en el Instagram del emulador
     # (21/11: hidroponía, desconectada por el baneo). Intentar entrar a una cuenta cerrada
     # trababa el emulador y tiraba las historias de las otras cuentas.
@@ -256,6 +220,21 @@ def main():
         return 0
 
     import historia_emulador as he
+    # 21/11: la PRIMERA cuenta de cada corrida fallaba siempre (hidro, o bonsái cuando hidro
+    # estaba en pausa): recién prendido, Instagram reproduce los videos del inicio, la pantalla
+    # no se puede leer y a veces el emulador se cae. Calentamiento: abrir Instagram, esperar,
+    # ir al perfil (sin videos) y recién ahí empezar.
+    try:
+        he.adb("shell", "monkey", "-p", "com.instagram.android", "-c", "android.intent.category.LAUNCHER", "1")
+        time.sleep(45)
+        tab = next((n for n in he.nodos() if n["desc"] in ("Profile", "Perfil")), None)
+        if tab:
+            he.tocar(tab)
+        time.sleep(15)
+        he.adb("shell", "am", "force-stop", "com.instagram.android")
+        log("calentamiento hecho")
+    except Exception as e:  # noqa: BLE001
+        log("calentamiento falló:", str(e)[:100])
     # Y la que falla se reintenta una vez al final de la misma corrida.
     pend = pend + [None] + list(pend)
     for p in pend:
@@ -284,8 +263,6 @@ def main():
                 he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER,
                             sin_publicar=True)
                 continue
-            est.setdefault("intentos", {})[n] = {
-                "rid": rid, "t": (datetime.now(timezone.utc) - timedelta(minutes=2)).strftime("%Y-%m-%dT%H:%M:%S")}
             he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
             # Hecha recién cuando Instagram la muestra (hasta 10 min; el emulador sigue prendido)
             for _ in range(40 if antes is not None else 0):
@@ -304,12 +281,6 @@ def main():
         except (Exception, SystemExit) as e:   # noqa: BLE001
             fallas[rid] = fallas.get(rid, 0) + 1
             log(f"falló {n} {rid} (intento {fallas[rid]}): {str(e)[:200]}")
-            try:
-                v = subprocess.run(["adb", "-s", "emulator-5554", "shell", "dumpsys", "package", "com.instagram.android"],
-                                   capture_output=True, text=True, timeout=30).stdout
-                log("  Instagram al fallar: " + next((l.strip() for l in v.splitlines() if "versionName" in l), "sin dato"))
-            except Exception:  # noqa: BLE001
-                pass
             # 21/11: Instagram pidió un código por mail a herbología (control de seguridad por
             # entrar desde GitHub). Insistir puede terminar en cuenta restringida (le pasó a
             # terrarios): esa cuenta queda en pausa hasta que Tomix la valide en el emulador.
