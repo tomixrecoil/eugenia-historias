@@ -144,6 +144,8 @@ jobs:
           adb shell ime set com.android.adbkeyboard/.AdbIME || echo "aviso: sin teclado ADB, el botón sale sin emoji"
 
       - name: Historias
+        # 22/11: una corrida quedó colgada 1 h 30 y GitHub la cortó mientras guardaba el celular.
+        timeout-minutes: 45
         if: steps.pend.outputs.n != '0'
         run: python3 historias_nube.py ${{ inputs.cada_cuenta && '--cada-cuenta' || '' }} ${{ inputs.modo && format('--{0}', inputs.modo) || '' }} ${{ inputs.solo && format('--solo={0}', inputs.solo) || '' }}
 
@@ -151,7 +153,10 @@ jobs:
         # 21/11: si en esta corrida subió alguna historia o se cargó un código, la copia del
         # emulador se guarda tal como quedó: Instagram ve siempre el mismo celular (sin la PC).
         # Si la copia nueva no pasa el chequeo (qemu-img check), no se sube y queda la anterior.
-        if: always() && hashFiles('guardar_avd') != ''
+        # APAGADO 22/11: el 22/11 lo cortaron a mitad de la subida (ya había borrado la copia
+        # vieja) y el celular de la nube quedó roto. Vuelve cuando suba a un release aparte y
+        # cambie de copia recién con todas las partes arriba.
+        if: false
         env:
           GH_TOKEN: ${{ github.token }}
           EMU_CLAVE: ${{ secrets.EMU_CLAVE }}
