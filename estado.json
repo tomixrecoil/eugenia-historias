@@ -32,18 +32,16 @@
   "stk-bonsa-524512": 9,
   "stk-herbo-856160": 3,
   "stk-bonsa-556678": 4,
-  "stk-herbo-472982": 10,
+  "stk-herbo-472982": 12,
   "stk-terra-007621-m": 1,
   "stk-bonsa-822689": 1,
   "stk-hidro-101462": 14,
   "stk-hidro-836955": 23,
-  "stk-hidro-533718": 6,
-  "stk-bonsa-190038": 6
+  "stk-hidro-533718": 8,
+  "stk-bonsa-190038": 8
  },
  "textos": {
   "bonsai": [
-   "CURSO 100% ONLINE | HAZ CLICK",
-   "60% OFF HOY | ENTRA AHORA",
    "💥 60% OFF | ENTRA AHORA",
    "60% OFF ESTA SEMANA | ENTRA",
    "BONSAI ONLINE | ENTRA YA",
@@ -56,7 +54,9 @@
    "60% OFF HOY | HAZ CLICK",
    "60% OFF HOY | ENTRA YA",
    "🎓 60% OFF | TOCA AQUÍ",
-   "🎓 INFORMACION DEL CURSO"
+   "🎓 INFORMACION DEL CURSO",
+   "🎓 60% OFF | TOCA AQUÍ",
+   "🎓 60% OFF | ENTRA AHORA"
   ],
   "terrarios": [
    "🔥 CURSO ONLINE 60% OFF | ENTRA",
@@ -65,8 +65,6 @@
    "💥 60% DE DESCUENTO | ENTRA YA"
   ],
   "hidroponia": [
-   "🔗 60% OFF HOY | ENTRA YA",
-   "🔗 60% OFF HOY | ENTRA YA",
    "🔗 60% OFF | ENTRA AHORA",
    "🔗 60% OFF | ENTRA YA",
    "🔗 60% DE DESCUENTO | ENTRA YA",
@@ -79,11 +77,11 @@
    "60% OFF ESTA SEMANA | ENTRA",
    "60% OFF + BONOS | ENTRA YA",
    "🔥 OFERTA EXCLUSIVA | ENTRA YA",
-   "🔥 CURSO 100% ONLINE | HAZ CLICK"
+   "🔥 CURSO 100% ONLINE | HAZ CLICK",
+   "🔥 60% OFF HOY | HAZ CLICK",
+   "🔥 60% DE DESCUENTO | ENTRA YA"
   ],
   "herbologia": [
-   "🎓 60% OFF + BONOS | ENTRA YA",
-   "60% OFF | HAZ CLICK",
    "CURSO 100% ONLINE | HAZ CLICK",
    "60% OFF | ENTRA YA",
    "60% OFF ESTA SEMANA | ENTRA 👉",
@@ -96,7 +94,9 @@
    "🎓 OFERTA EXCLUSIVA | ENTRA YA",
    "🎓 HERBOLOGÍA 60% OFF | ENTRA YA",
    "🎓 60% DE DESCUENTO | HAZ CLICK",
-   "🎓 60% DESCUENTO | ENTRA YA"
+   "🎓 60% DESCUENTO | ENTRA YA",
+   "🎓 60% OFF HOY | ENTRA AHORA",
+   "🎓 60% OFF HOY | ENTRA AHORA"
   ]
  },
  "pausadas": [],
@@ -104,11 +104,15 @@
  "intentos": {
   "hidroponia": {
    "rid": "stk-hidro-533718",
-   "t": "2026-11-22T18:14:01"
+   "t": "2026-11-22T18:33:33"
   },
   "bonsai": {
    "rid": "stk-bonsa-190038",
-   "t": "2026-11-22T18:17:08"
+   "t": "2026-11-22T18:36:32"
+  },
+  "herbologia": {
+   "rid": "stk-herbo-472982",
+   "t": "2026-11-22T18:39:22"
   }
  }
 }
