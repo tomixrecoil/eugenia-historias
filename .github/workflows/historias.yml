@@ -142,6 +142,7 @@ jobs:
           adb shell pm disable-user --user 0 com.android.vending || true
           echo "Instagram al prender: $(adb shell dumpsys package com.instagram.android | grep -m1 versionName)" | tee -a version_ig.txt
           nohup sh -c 'while true; do adb logcat -v time >> logcat.txt 2>&1; sleep 5; done' >/dev/null 2>&1 &
+          mkdir -p fotos; nohup sh -c 'i=0; while true; do i=$((i+1)); adb exec-out screencap -p > fotos/f$(printf %05d $i).png 2>/dev/null; ls fotos | head -n -40 | sed s#^#fotos/# | xargs -r rm -f; sleep 2; done' >/dev/null 2>&1 &
           adb install -r apk/adbkeyboard.apk || true
           # Recién instalado tarda unos segundos en registrarse como teclado
           for i in $(seq 1 12); do
@@ -223,7 +224,7 @@ jobs:
           cp /tmp/android-runner/emu-crash-*.db/*/*.dmp . 2>/dev/null || true
           ls -R /tmp/android-runner 2>/dev/null | tail -20 >> emulador.log || true
           tail -c 30000000 logcat.txt > logcat_fin.txt 2>/dev/null || true
-          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp logcat_fin.txt version_ig.txt 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
+          tar -czf diag.tgz $(ls falla_*.png editor_*.png *.dmp logcat_fin.txt version_ig.txt 2>/dev/null) $(ls fotos/*.png 2>/dev/null) emulador.log || tar -czf diag.tgz emulador.log
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:EMU_CLAVE -in diag.tgz -out diag.tgz.enc
           rm -f diag.tgz falla_*.png editor_*.png
 
