@@ -38,12 +38,10 @@
   "stk-hidro-101462": 14,
   "stk-hidro-836955": 23,
   "stk-hidro-533718": 10,
-  "stk-bonsa-190038": 10
+  "stk-bonsa-190038": 12
  },
  "textos": {
   "bonsai": [
-   "BONSAI ONLINE | ENTRA YA",
-   "🎓 60% OFF | ENTRA YA",
    "🎓 60% OFF + BONOS | ENTRA YA",
    "💥 60% DE DESCUENTO | ENTRA YA",
    "💥 60% OFF | AP",
@@ -56,7 +54,9 @@
    "🎓 60% OFF | TOCA AQUÍ",
    "🎓 60% OFF | ENTRA AHORA",
    "🎓 60% DE DESCUENTO | ENTRA YA",
-   "🎓 60% OFF | ENTRA YA"
+   "🎓 60% OFF | ENTRA YA",
+   "🎓 60% DE DESCUENTO | ENTRA YA",
+   "60% DE DESCUENTO | ENTRA YA"
   ],
   "terrarios": [
    "🔥 CURSO ONLINE 60% OFF | ENTRA",
@@ -108,7 +108,7 @@
   },
   "bonsai": {
    "rid": "stk-bonsa-190038",
-   "t": "2026-11-22T18:58:21"
+   "t": "2026-11-22T19:11:24"
   },
   "herbologia": {
    "rid": "stk-herbo-472982",
