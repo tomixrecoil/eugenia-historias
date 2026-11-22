@@ -191,7 +191,7 @@ jobs:
           import json
           m = json.load(open("/tmp/mio.json", encoding="utf-8"))
           r = json.load(open("estado.json", encoding="utf-8"))
-          for k in ("hechas", "fallas", "textos", "pausa_hasta"):
+          for k in ("hechas", "fallas", "textos", "pausa_hasta", "intentos"):
               r.setdefault(k, {}).update(m.get(k, {}))
           r["desde"] = r.get("desde") or m.get("desde")
           json.dump(r, open("estado.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
