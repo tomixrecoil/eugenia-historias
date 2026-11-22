@@ -18,7 +18,7 @@ on:
         type: string
         default: ""
       gpu:
-        description: "Gráficos del emulador (vacío = guest, el normal desde el 22/11; swiftshader_indirect = el viejo, se cae al abrir Instagram)"
+        description: "Gráficos del emulador (swiftshader_indirect o guest, más estable)"
         type: string
         default: ""
       modo:
@@ -34,9 +34,7 @@ concurrency:
 jobs:
   historias:
     runs-on: ubuntu-latest
-    # 22/11: modo guest (gráficos dentro de Android): no se cae como swiftshader, pero es
-    # mucho más lento. Tope de GitHub: 360 min.
-    timeout-minutes: 300
+    timeout-minutes: 100
     permissions:
       contents: write
     env:
@@ -109,7 +107,7 @@ jobs:
 
       - name: Prender el emulador
         if: steps.pend.outputs.n != '0'
-        timeout-minutes: 40
+        timeout-minutes: 25
         env:
           ADB_KEY: ${{ secrets.ADB_KEY }}
           ADB_KEY_PUB: ${{ secrets.ADB_KEY_PUB }}
@@ -122,7 +120,7 @@ jobs:
           chmod 600 ~/.android/adbkey
           adb kill-server || true
           adb start-server
-          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-guest} -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
+          nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-swiftshader_indirect} -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
