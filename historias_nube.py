@@ -133,7 +133,7 @@ def asegurar_emulador():
     time.sleep(5)
     gpu = os.environ.get("EMU_GPU") or "swiftshader_indirect"
     subprocess.Popen("nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot "
-                     f"-gpu {gpu} -memory 4096 -cores 4 -accel on >> emulador.log 2>&1 &",
+                     f"-gpu {gpu} -memory 4096 -cores 4 -accel on -feature -Vulkan >> emulador.log 2>&1 &",
                      shell=True)
     for _ in range(60):
         time.sleep(10)
