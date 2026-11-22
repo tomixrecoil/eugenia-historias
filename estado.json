@@ -36,14 +36,12 @@
   "stk-bonsa-822689": 1,
   "stk-hidro-101462": 14,
   "stk-hidro-836955": 23,
-  "stk-hidro-533718": 10,
-  "stk-bonsa-190038": 14,
+  "stk-hidro-533718": 12,
+  "stk-bonsa-190038": 16,
   "stk-terra-199045": 2
  },
  "textos": {
   "bonsai": [
-   "💥 60% OFF | AP",
-   "🎓 60% OFF | TOCA AQUÍ",
    "🎓 60% OFF HOY | HAZ CLICK",
    "60% OFF HOY | HAZ CLICK",
    "60% OFF HOY | ENTRA YA",
@@ -56,7 +54,9 @@
    "🎓 60% DE DESCUENTO | ENTRA YA",
    "60% DE DESCUENTO | ENTRA YA",
    "🎓 60% OFF | TOCA AQUÍ",
-   "60% OFF HOY | HAZ CLIC"
+   "60% OFF HOY | HAZ CLIC",
+   "60% OFF HOY | ENTRA AHORA",
+   "60% OFF HOY | TOCA AQUI"
   ],
   "terrarios": [
    "🔥 CURSO ONLINE 60% OFF | ENTRA",
@@ -67,8 +67,6 @@
    "60% OFF HOY | ENTRA AHORA"
   ],
   "hidroponia": [
-   "🔗 60% DE DESCUENTO | ENTRA YA",
-   "🔗 60% DE DESCUENTO | ENTRA YA",
    "🔗 60% OFF HOY | ENTRA AHORA",
    "🔗 60% OFF HOY | ENTRA AHORA",
    "🔗 60% OFF | ENTRA AHORA",
@@ -81,7 +79,9 @@
    "🔥 60% OFF HOY | HAZ CLICK",
    "🔥 60% DE DESCUENTO | ENTRA YA",
    "🔥 TOCA MAS INFORMACION",
-   "🔥 INFORMACION DEL CURSO"
+   "🔥 INFORMACION DEL CURSO",
+   "60% OFF + BONOS | ENTRA YA",
+   "OFERTA EXCLUSIVA | ENTRA YA"
   ],
   "herbologia": [
    "60% OFF ESTA SEMANA | ENTRA 👉",
