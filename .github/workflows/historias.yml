@@ -39,6 +39,7 @@ jobs:
       contents: write
     env:
       EMU_GPU: ${{ inputs.gpu }}
+      CAMBIO_SIN_RED: "1"
       PUERTA_R2_URL: ${{ secrets.PUERTA_R2_URL }}
       PUERTA_R2_KEY: ${{ secrets.PUERTA_R2_KEY }}
       META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}

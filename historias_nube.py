@@ -220,21 +220,6 @@ def main():
         return 0
 
     import historia_emulador as he
-    # 21/11: la PRIMERA cuenta de cada corrida fallaba siempre (hidro, o bonsái cuando hidro
-    # estaba en pausa): recién prendido, Instagram reproduce los videos del inicio, la pantalla
-    # no se puede leer y a veces el emulador se cae. Calentamiento: abrir Instagram, esperar,
-    # ir al perfil (sin videos) y recién ahí empezar.
-    try:
-        he.adb("shell", "monkey", "-p", "com.instagram.android", "-c", "android.intent.category.LAUNCHER", "1")
-        time.sleep(45)
-        tab = next((n for n in he.nodos() if n["desc"] in ("Profile", "Perfil")), None)
-        if tab:
-            he.tocar(tab)
-        time.sleep(15)
-        he.adb("shell", "am", "force-stop", "com.instagram.android")
-        log("calentamiento hecho")
-    except Exception as e:  # noqa: BLE001
-        log("calentamiento falló:", str(e)[:100])
     # Y la que falla se reintenta una vez al final de la misma corrida.
     pend = pend + [None] + list(pend)
     for p in pend:
@@ -263,6 +248,19 @@ def main():
                 he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER,
                             sin_publicar=True)
                 continue
+            # 22/11 (causa encontrada): en la copia, Instagram arranca en hidroponía, y esa sesión
+            # tiene la verificación en dos pasos de Meta (ChallengeActivity) que tapa todo y tira
+            # el emulador. Se cambia de cuenta SIN internet (Instagram no puede pedir la
+            # verificación), y recién con la cuenta buscada activa se vuelve a conectar.
+            if "--sin-red" in sys.argv or os.environ.get("CAMBIO_SIN_RED") == "1":
+                he.adb("shell", "cmd", "connectivity", "airplane-mode", "enable")
+                time.sleep(4)
+                log(f"  sin internet: cambio a {CUENTAS[n][0]}")
+                he.cambiar_cuenta(CUENTAS[n][0])
+                he.adb("shell", "am", "force-stop", "com.instagram.android")
+                he.adb("shell", "cmd", "connectivity", "airplane-mode", "disable")
+                time.sleep(20)
+                log("  internet de nuevo")
             he.publicar(n, str(video), texto=texto, sck=sck, cuenta=CUENTAS[n][0], y=Y_STICKER)
             # Hecha recién cuando Instagram la muestra (hasta 10 min; el emulador sigue prendido)
             for _ in range(40 if antes is not None else 0):
