@@ -41,12 +41,10 @@
   "stk-terra-199045": 5,
   "stk-hidro-326560": 2,
   "stk-bonsa-476577": 2,
-  "stk-bonsa-457734": 4
+  "stk-bonsa-457734": 6
  },
  "textos": {
   "bonsai": [
-   "🎓 60% OFF | ENTRA YA",
-   "🎓 60% DE DESCUENTO | ENTRA YA",
    "60% DE DESCUENTO | ENTRA YA",
    "🎓 60% OFF | TOCA AQUÍ",
    "60% OFF HOY | HAZ CLIC",
@@ -59,7 +57,9 @@
    "🔥 60% OFF ESTA SEMANA | ENTRA",
    "60% OFF + BONOS | ENTRA YA",
    "🔥 TOCA MAS INFORMACION",
-   "60% OFF HOY | HAZ CLICK"
+   "60% OFF HOY | HAZ CLICK",
+   "🔥 60% DE DESCUENTO | ENTRA YA",
+   "CURSO 100% ONLINE | HAZ CLICK"
   ],
   "terrarios": [
    "🔥 CURSO ONLINE 60% OFF | ENTRA",
