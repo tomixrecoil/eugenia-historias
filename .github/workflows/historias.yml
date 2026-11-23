@@ -122,6 +122,9 @@ jobs:
           adb kill-server || true
           adb start-server
           nohup emulator -avd eugenia_ig -no-window -no-audio -no-boot-anim -no-snapshot -gpu ${EMU_GPU:-swiftshader_indirect} -memory 4096 -cores 4 -accel on > emulador.log 2>&1 &
+          # 23/11: sin internet desde el primer segundo. La sesión de hidroponía de esta copia tiene la
+          # verificación de Meta; con internet, Instagram la pide al arrancar y tira el emulador.
+          ( for j in $(seq 1 180); do adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 && break; sleep 1; done ) &
           ok=0
           for i in $(seq 1 120); do
             st=$(adb devices | grep emulator | awk '{print $2}')
